@@ -50,6 +50,8 @@ export default defineSchema({
     waId: v.string(),
     name: v.union(v.string(), v.null()),
     language: v.union(v.literal("sw"), v.literal("en")),
+    // Created by scripts/simulate.ts: replies are logged to the outbox but never sent to Meta.
+    simulated: v.optional(v.boolean()),
   }).index("by_wa_id", ["waId"]),
 
   // Raw WhatsApp messages, deduped by Meta's message id (webhooks retry).

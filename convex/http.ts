@@ -27,6 +27,8 @@ type WaMessage = {
   audio?: { id: string; mime_type: string };
   document?: { id: string; mime_type: string; caption?: string };
   interactive?: { type: string; button_reply?: { id: string; title: string } };
+  // Set only by scripts/simulate.ts. Trusted because the body is signed with the app secret.
+  duka_sim?: boolean;
 };
 
 http.route({
@@ -57,6 +59,7 @@ http.route({
             text: button?.id ?? m.text?.body ?? m.image?.caption ?? m.document?.caption ?? null,
             mediaId: media?.id ?? null,
             mimeType: media?.mime_type ?? null,
+            simulated: m.duka_sim === true,
           });
         }
       }

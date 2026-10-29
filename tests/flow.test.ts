@@ -111,6 +111,18 @@ describe("WhatsApp loop", () => {
     ]);
   });
 
+  it("never sends to Meta for a simulated shop, even with dry run off", async () => {
+    vi.stubEnv("WHATSAPP_DRY_RUN", "");
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const t = convexTest(schema, modules);
+    await deliver(t, webhook({ type: "text", text: { body: SMS }, duka_sim: true }));
+    const reply = await latest(t);
+    expect(reply.body).toContain("Jane Wanjiku");
+    expect(reply.dryRun).toBe(true);
+    expect(fetchSpy.mock.calls.filter(([url]) => String(url).includes("graph.facebook.com"))).toHaveLength(0);
+    fetchSpy.mockRestore();
+  });
+
   it("ignores a webhook retry with the same message id", async () => {
     const t = convexTest(schema, modules);
     const body = webhook({ type: "text", text: { body: SMS } });

@@ -18,19 +18,21 @@ export const record = internalMutation({
     text: v.union(v.string(), v.null()),
     mediaId: v.union(v.string(), v.null()),
     mimeType: v.union(v.string(), v.null()),
+    simulated: v.optional(v.boolean()),
   },
-  handler: async (ctx, { waId, ...msg }) => {
+  handler: async (ctx, { waId, simulated, ...msg }) => {
     const dupe = await ctx.db
       .query("inbound")
       .withIndex("by_wa_message_id", (q) => q.eq("waMessageId", msg.waMessageId))
       .unique();
     if (dupe) return;
 
-    let shop = await ctx.db
+    const shop = await ctx.db
       .query("shops")
       .withIndex("by_wa_id", (q) => q.eq("waId", waId))
       .unique();
-    const shopId = shop?._id ?? (await ctx.db.insert("shops", { waId, name: null, language: "sw" }));
+    // A real number never turns simulated: the flag only applies to shops the simulator creates.
+    const shopId = shop?._id ?? (await ctx.db.insert("shops", { waId, name: null, language: "sw", simulated: simulated || undefined }));
 
     const inboundId = await ctx.db.insert("inbound", { shopId, ...msg, status: "received", error: null });
     await ctx.scheduler.runAfter(0, internal.process.inbound, { inboundId });

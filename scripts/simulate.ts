@@ -1,6 +1,7 @@
 // Plays the shop owner against a running deployment, without a phone or Meta. Sends a signed webhook to
-// CONVEX_SITE_URL and prints the replies from the outbox. The deployment needs WHATSAPP_DRY_RUN=1 and the same
-// WHATSAPP_APP_SECRET as .env.local.
+// CONVEX_SITE_URL and prints the replies from the outbox. The deployment needs the same WHATSAPP_APP_SECRET as
+// .env.local. Messages carry a signed duka_sim flag, so the shop they create never gets real WhatsApp sends, even
+// on a live deployment. Use a made-up SIM_FROM (e.g. 254700000901), never a real owner's number.
 //   pnpm simulate "TJK4H7XYZ1 Confirmed.You have received Ksh650.00 from JANE ..."
 //   pnpm simulate confirm        tap "Sawa, andika" on the latest proposal
 //   pnpm simulate reject         tap "Si sahihi"
@@ -35,7 +36,7 @@ if (input === "confirm" || input === "reject") {
 
 const body = JSON.stringify({
   object: "whatsapp_business_account",
-  entry: [{ changes: [{ field: "messages", value: { messages: [{ id: `wamid.sim-${randomUUID()}`, from, ...message }] } }] }],
+  entry: [{ changes: [{ field: "messages", value: { messages: [{ id: `wamid.sim-${randomUUID()}`, from, duka_sim: true, ...message }] } }] }],
 });
 const res = await fetch(`${site}/whatsapp`, {
   method: "POST",

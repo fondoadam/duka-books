@@ -7,8 +7,11 @@ function authHeaders() {
   return { Authorization: `Bearer ${token}` };
 }
 
-async function send(payload: Record<string, unknown>) {
-  if (process.env.WHATSAPP_DRY_RUN === "1") return; // replies are still logged in the outbox
+// Dry run for the whole deployment (WHATSAPP_DRY_RUN=1) or for one simulated shop. Replies are still logged in the outbox.
+export const isDryRun = (shop?: { simulated?: boolean }) => process.env.WHATSAPP_DRY_RUN === "1" || shop?.simulated === true;
+
+async function send(payload: Record<string, unknown>, dryRun = false) {
+  if (dryRun || isDryRun()) return;
   const res = await fetch(`${GRAPH}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
     method: "POST",
     headers: { ...authHeaders(), "Content-Type": "application/json" },
@@ -17,12 +20,12 @@ async function send(payload: Record<string, unknown>) {
   if (!res.ok) throw new Error(`WhatsApp send failed: ${res.status} ${await res.text()}`);
 }
 
-export function sendText(to: string, body: string) {
-  return send({ to, type: "text", text: { body } });
+export function sendText(to: string, body: string, dryRun = false) {
+  return send({ to, type: "text", text: { body } }, dryRun);
 }
 
 // Up to 3 reply buttons; titles max 20 chars.
-export function sendButtons(to: string, body: string, buttons: { id: string; title: string }[]) {
+export function sendButtons(to: string, body: string, buttons: { id: string; title: string }[], dryRun = false) {
   return send({
     to,
     type: "interactive",
@@ -31,12 +34,12 @@ export function sendButtons(to: string, body: string, buttons: { id: string; tit
       body: { text: body },
       action: { buttons: buttons.map((b) => ({ type: "reply", reply: b })) },
     },
-  });
+  }, dryRun);
 }
 
 // Blue ticks plus "typing…" on the owner's phone while we work. The indicator clears on our reply (or after 25 s).
-export function markRead(messageId: string) {
-  return send({ status: "read", message_id: messageId, typing_indicator: { type: "text" } });
+export function markRead(messageId: string, dryRun = false) {
+  return send({ status: "read", message_id: messageId, typing_indicator: { type: "text" } }, dryRun);
 }
 
 export async function downloadMedia(mediaId: string) {

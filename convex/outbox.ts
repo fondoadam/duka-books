@@ -6,9 +6,10 @@ export const log = internalMutation({
     to: v.string(),
     body: v.string(),
     buttons: v.union(v.array(v.object({ id: v.string(), title: v.string() })), v.null()),
+    dryRun: v.boolean(),
   },
   handler: async (ctx, args) => {
-    await ctx.db.insert("outbox", { ...args, dryRun: process.env.WHATSAPP_DRY_RUN === "1" });
+    await ctx.db.insert("outbox", args);
   },
 });
 

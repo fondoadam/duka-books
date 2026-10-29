@@ -1,6 +1,5 @@
 import { v } from "convex/values";
 import { internalAction, type ActionCtx } from "./_generated/server";
-import type { Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { textModel } from "./lib/ai";
 import { answer, isQuestion } from "./lib/ask";
@@ -8,20 +7,23 @@ import { extractFromImage, extractFromText, type Extraction } from "./lib/extrac
 import { kes } from "./lib/money";
 import { parseMpesa } from "./lib/mpesa";
 import { resolvePeriod } from "./lib/periods";
-import { downloadMedia, markRead, sendButtons, sendText } from "./lib/whatsapp";
+import type { Doc, Id } from "./_generated/dataModel";
+import { downloadMedia, isDryRun, markRead, sendButtons, sendText } from "./lib/whatsapp";
 
 const nairobiToday = () => new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Nairobi" });
 
 // Logs every reply to the outbox, then sends it (unless WHATSAPP_DRY_RUN=1).
-function replier(ctx: ActionCtx, to: string) {
+function replier(ctx: ActionCtx, shop: Doc<"shops">) {
+  const to = shop.waId;
+  const dryRun = isDryRun(shop);
   return {
     text: async (body: string) => {
-      await ctx.runMutation(internal.outbox.log, { to, body, buttons: null });
-      await sendText(to, body);
+      await ctx.runMutation(internal.outbox.log, { to, body, buttons: null, dryRun });
+      await sendText(to, body, dryRun);
     },
     buttons: async (body: string, buttons: { id: string; title: string }[]) => {
-      await ctx.runMutation(internal.outbox.log, { to, body, buttons });
-      await sendButtons(to, body, buttons);
+      await ctx.runMutation(internal.outbox.log, { to, body, buttons, dryRun });
+      await sendButtons(to, body, buttons, dryRun);
     },
   };
 }
@@ -33,10 +35,9 @@ export const inbound = internalAction({
     const found = await ctx.runQuery(internal.inbound.get, { inboundId });
     if (!found) return;
     const { inbound, shop } = found;
-    const to = shop.waId;
-    const reply = replier(ctx, to);
+    const reply = replier(ctx, shop);
     // Cosmetic: never let a failed read receipt stop the reply.
-    await markRead(inbound.waMessageId).catch(() => {});
+    await markRead(inbound.waMessageId, isDryRun(shop)).catch(() => {});
 
     try {
       if (inbound.kind === "button" && inbound.text) {
