@@ -35,6 +35,8 @@ http.route({
   handler: httpAction(async (ctx, req) => {
     const raw = await req.text();
     if (!(await verifySignature(raw, req.headers.get("x-hub-signature-256")))) {
+      // Usually a WHATSAPP_APP_SECRET that isn't this app's secret.
+      console.warn("Rejected webhook: bad X-Hub-Signature-256");
       return new Response("Bad signature", { status: 401 });
     }
 
