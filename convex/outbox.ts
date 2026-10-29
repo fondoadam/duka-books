@@ -1,11 +1,13 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "./_generated/server";
+import { outboxMedia } from "./schema";
 
 export const log = internalMutation({
   args: {
     to: v.string(),
     body: v.string(),
     buttons: v.union(v.array(v.object({ id: v.string(), title: v.string() })), v.null()),
+    media: v.optional(outboxMedia),
     dryRun: v.boolean(),
   },
   handler: async (ctx, args) => {

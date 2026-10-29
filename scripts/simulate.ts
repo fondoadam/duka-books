@@ -6,6 +6,7 @@
 //   pnpm simulate confirm        tap "Sawa, andika" on the latest proposal
 //   pnpm simulate reject         tap "Si sahihi"
 //   pnpm simulate photo          send a photo (needs EXTRACT_STUB=1 on the deployment: the media id is fake)
+//   pnpm simulate ripoti         today's summary; "ripoti ya mwezi" sends the P&L PDF (its link is printed)
 import { execFileSync } from "node:child_process";
 import { createHmac, randomUUID } from "node:crypto";
 
@@ -18,7 +19,12 @@ if (!site || !secret || !input) {
   process.exit(1);
 }
 
-type Out = { _id: string; body: string; buttons: { id: string; title: string }[] | null };
+type Out = {
+  _id: string;
+  body: string;
+  buttons: { id: string; title: string }[] | null;
+  media?: { type: "document" | "image"; link: string; filename: string | null };
+};
 const outbox = (): Out[] =>
   JSON.parse(execFileSync("npx", ["convex", "run", "outbox:recent", JSON.stringify({ to: from, limit: 10 })], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }));
 
@@ -53,6 +59,7 @@ for (let i = 0; i < 30; i++) {
   for (const m of fresh) {
     console.log(`\n< ${m.body.replace(/\n/g, "\n  ")}`);
     if (m.buttons) console.log(`  [${m.buttons.map((b) => b.title).join("] [")}]`);
+    if (m.media) console.log(`  📎 ${m.media.type}${m.media.filename ? ` ${m.media.filename}` : ""}: ${m.media.link}`);
   }
   process.exit(0);
 }

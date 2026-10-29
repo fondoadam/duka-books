@@ -44,6 +44,13 @@ export const account = v.union(
   v.literal("expenses"),
 );
 
+// A document (the P&L PDF) or image (annotated receipts) sent by link; body is its caption.
+export const outboxMedia = v.object({
+  type: v.union(v.literal("document"), v.literal("image")),
+  link: v.string(),
+  filename: v.union(v.string(), v.null()),
+});
+
 export default defineSchema({
   // A shop is identified by the owner's WhatsApp number (wa_id).
   shops: defineTable({
@@ -54,6 +61,10 @@ export default defineSchema({
     simulated: v.optional(v.boolean()),
     // The proposal the owner is fixing after "Si sahihi"; their next "2 = 450" applies to it.
     pendingCorrection: v.optional(v.union(v.id("proposals"), v.null())),
+    // WhatsApp only allows free-form messages within 24h of the owner's last one; the evening summary checks this.
+    lastInboundAt: v.optional(v.number()),
+    // "acha ripoti" turns the evening summary off, "anza ripoti" back on.
+    summaryOptOut: v.optional(v.boolean()),
   }).index("by_wa_id", ["waId"]),
 
   // Raw WhatsApp messages, deduped by Meta's message id (webhooks retry).
@@ -113,6 +124,7 @@ export default defineSchema({
     to: v.string(),
     body: v.string(),
     buttons: v.union(v.array(v.object({ id: v.string(), title: v.string() })), v.null()),
+    media: v.optional(outboxMedia),
     dryRun: v.boolean(),
   }).index("by_to", ["to"]),
 });

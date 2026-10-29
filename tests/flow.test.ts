@@ -266,3 +266,40 @@ describe("Corrections", () => {
     expect((await t.run((ctx) => ctx.db.query("proposals").first()))!.status).toBe("rejected");
   });
 });
+
+describe("Reports on WhatsApp", () => {
+  const say = (t: ReturnType<typeof convexTest>, body: string) => deliver(t, webhook({ type: "text", text: { body } }));
+
+  it("'ripoti' sends today's summary, 'acha ripoti' opts out", async () => {
+    vi.setSystemTime(new Date("2026-10-25T12:00:00+03:00"));
+    const t = convexTest(schema, modules);
+    await say(t, SMS);
+    await deliver(t, webhook({ type: "interactive", interactive: { type: "button_reply", button_reply: (await latest(t)).buttons![0] } }));
+    await say(t, "Ripoti");
+    expect((await latest(t)).body).toContain("Mauzo: KES 650");
+    await say(t, "acha ripoti");
+    expect((await latest(t)).body).toContain("sitatuma ripoti");
+    expect((await t.run((ctx) => ctx.db.query("shops").first()))!.summaryOptOut).toBe(true);
+  });
+
+  it("'Nani ananidai?' lists debtors with a total", async () => {
+    vi.stubEnv("EXTRACT_STUB", "1");
+    const t = convexTest(schema, modules);
+    await deliver(t, webhook({ type: "image", image: { id: "fake-media", mime_type: "image/jpeg" } }));
+    await deliver(t, webhook({ type: "interactive", interactive: { type: "button_reply", button_reply: (await latest(t)).buttons![0] } }));
+    await say(t, "Nani ananidai?");
+    expect((await latest(t)).body).toBe("Wateja wanaodaiwa:\n1. Mama Njeri: KES 360\nJumla: KES 360");
+  });
+
+  it("'ripoti ya mwezi' sends the P&L as a PDF document from storage", async () => {
+    const t = convexTest(schema, modules);
+    await say(t, "ripoti ya mwezi");
+    const doc = await latest(t);
+    expect(doc.media).toMatchObject({ type: "document" });
+    expect(doc.media!.filename).toMatch(/^Duka-Books-PnL-\d{4}-\d{2}\.pdf$/);
+    expect(doc.body).toContain("Faida halisi: KES 0");
+    const files = await t.run((ctx) => ctx.db.system.query("_storage").collect());
+    expect(files).toHaveLength(1);
+    expect(files[0].contentType).toBe("application/pdf");
+  });
+});

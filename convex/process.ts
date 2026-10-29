@@ -8,11 +8,11 @@ import { parseCorrection, type Correction } from "./lib/corrections";
 import { extractFromImage, extractFromText, type Extraction } from "./lib/extract";
 import { kes } from "./lib/money";
 import { parseMpesa } from "./lib/mpesa";
-import { resolvePeriod } from "./lib/periods";
+import { nairobiToday, resolvePeriod } from "./lib/periods";
 import { replier, type Reply } from "./lib/reply";
 import { downloadMedia, isDryRun, markRead } from "./lib/whatsapp";
-
-const nairobiToday = () => new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Nairobi" });
+import { sendPnl } from "./pnl";
+import { buildSummary } from "./summaries";
 
 const HANDLED = "Hii tayari imeshughulikiwa.";
 const CANCELLED = "Sawa, nimeghairi. Sijaandika chochote.";
@@ -85,6 +85,7 @@ async function onText(ctx: ActionCtx, shop: Doc<"shops">, inboundId: Id<"inbound
   }
   const fix = correcting ? parseCorrection(text) : null;
   if (fix) return correct(ctx, shop._id, reply, fix);
+  if (await onCommand(ctx, shop, reply, text, today)) return;
 
   const mpesa = parseMpesa(text, today);
   if (mpesa) return propose(ctx, shop._id, inboundId, reply, mpesa);
@@ -92,6 +93,27 @@ async function onText(ctx: ActionCtx, shop: Doc<"shops">, inboundId: Id<"inbound
   if (correcting) return reply.text(`Sijaelewa marekebisho hayo.\n${CORRECTION_HELP}\nAu andika 'Ghairi'.`);
   const examples = await ctx.runQuery(internal.ledger.recentCorrections, { shopId: shop._id });
   return propose(ctx, shop._id, inboundId, reply, await extractFromText(text, today, examples));
+}
+
+const PNL = /^(p\s*&\s*l|pnl|ripoti ya mwezi|taarifa ya (mkopo|mwezi)|faida na hasara)\b/;
+
+// Fixed phrases the owner can type: the P&L PDF, today's summary, and turning the evening summary off or on.
+async function onCommand(ctx: ActionCtx, shop: Doc<"shops">, reply: Reply, text: string, today: string) {
+  const t = text.trim().toLowerCase().replace(/[.!?]+$/, "");
+  if (PNL.test(t)) {
+    await sendPnl(ctx, shop, reply, /uliopita|iliyopita|last/.test(t) ? "last_month" : "this_month", today);
+  } else if (/^ripoti( ya leo)?$/.test(t)) {
+    await reply.text(await buildSummary(ctx, shop._id, today));
+  } else if (/^acha ripoti/.test(t)) {
+    await ctx.runMutation(internal.summaries.setOptOut, { shopId: shop._id, optOut: true });
+    await reply.text("Sawa, sitatuma ripoti ya jioni tena. Andika 'anza ripoti' kuzirudisha.");
+  } else if (/^(anza|washa) ripoti/.test(t)) {
+    await ctx.runMutation(internal.summaries.setOptOut, { shopId: shop._id, optOut: false });
+    await reply.text("Sawa, nitatuma ripoti kila jioni saa moja (7:00 PM) siku ukiwa na rekodi.");
+  } else {
+    return false;
+  }
+  return true;
 }
 
 async function correct(ctx: ActionCtx, shopId: Id<"shops">, reply: Reply, fix: Correction) {

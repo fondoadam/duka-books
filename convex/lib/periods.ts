@@ -29,3 +29,6 @@ export function resolvePeriod(name: Period, today: string): { from: string; to: 
       return month(-1);
   }
 }
+
+// Today's date in Nairobi (UTC+3, no daylight saving).
+export const nairobiToday = (now = Date.now()) => new Date(now).toLocaleDateString("en-CA", { timeZone: "Africa/Nairobi" });

@@ -37,6 +37,15 @@ export function sendButtons(to: string, body: string, buttons: { id: string; tit
   }, dryRun);
 }
 
+// Media go by link: Meta fetches the file from our Convex storage URL. Captions max 1024 chars.
+export function sendDocument(to: string, link: string, filename: string, caption: string, dryRun = false) {
+  return send({ to, type: "document", document: { link, filename, caption } }, dryRun);
+}
+
+export function sendImage(to: string, link: string, caption: string, dryRun = false) {
+  return send({ to, type: "image", image: { link, caption } }, dryRun);
+}
+
 // Blue ticks plus "typing…" on the owner's phone while we work. The indicator clears on our reply (or after 25 s).
 export function markRead(messageId: string, dryRun = false) {
   return send({ status: "read", message_id: messageId, typing_indicator: { type: "text" } }, dryRun);

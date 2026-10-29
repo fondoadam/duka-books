@@ -73,7 +73,11 @@ const templates = {
   debtors: (list: { name: string; owedCents: number }[]) =>
     list.length === 0
       ? "Hakuna mteja anayedaiwa kwa sasa."
-      : ["Wateja wanaodaiwa:", ...list.map((d, i) => `${i + 1}. ${d.name}: ${kes(d.owedCents)}`)].join("\n"),
+      : [
+          "Wateja wanaodaiwa:",
+          ...list.map((d, i) => `${i + 1}. ${d.name}: ${kes(d.owedCents)}`),
+          `Jumla: ${kes(list.reduce((sum, d) => sum + d.owedCents, 0))}`,
+        ].join("\n"),
   loans: ({ owedCents }: { owedCents: number }) =>
     owedCents > 0 ? `Deni lako la Fuliza ni ${kes(owedCents)}.` : "Huna deni la Fuliza.",
 };

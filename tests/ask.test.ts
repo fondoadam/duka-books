@@ -55,7 +55,7 @@ describe("answer", () => {
     expect(await answer("nilipata faida ngapi wiki hii?", tools)).toBe(
       "Faida wiki hii: KES 499.50\nMauzo KES 850, manunuzi KES 300, matumizi KES 50.50.",
     );
-    expect(await answer("Nani ananidai?", tools)).toBe("Wateja wanaodaiwa:\n1. Mama Njeri: KES 360");
+    expect(await answer("Nani ananidai?", tools)).toBe("Wateja wanaodaiwa:\n1. Mama Njeri: KES 360\nJumla: KES 360");
     expect(await answer("deni la fuliza?", tools)).toBe("Deni lako la Fuliza ni KES 30.50.");
   });
 

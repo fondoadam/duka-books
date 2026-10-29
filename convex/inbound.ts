@@ -33,6 +33,7 @@ export const record = internalMutation({
       .unique();
     // A real number never turns simulated: the flag only applies to shops the simulator creates.
     const shopId = shop?._id ?? (await ctx.db.insert("shops", { waId, name: null, language: "sw", simulated: simulated || undefined }));
+    await ctx.db.patch(shopId, { lastInboundAt: Date.now() });
 
     const inboundId = await ctx.db.insert("inbound", { shopId, ...msg, status: "received", error: null });
     await ctx.scheduler.runAfter(0, internal.process.inbound, { inboundId });

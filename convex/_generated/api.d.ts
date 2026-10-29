@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as crons from "../crons.js";
 import type * as http from "../http.js";
 import type * as inbound from "../inbound.js";
 import type * as ledger from "../ledger.js";
@@ -18,12 +19,16 @@ import type * as lib_extract from "../lib/extract.js";
 import type * as lib_money from "../lib/money.js";
 import type * as lib_mpesa from "../lib/mpesa.js";
 import type * as lib_periods from "../lib/periods.js";
+import type * as lib_pnl from "../lib/pnl.js";
 import type * as lib_posting from "../lib/posting.js";
 import type * as lib_reply from "../lib/reply.js";
+import type * as lib_summary from "../lib/summary.js";
 import type * as lib_whatsapp from "../lib/whatsapp.js";
 import type * as outbox from "../outbox.js";
+import type * as pnl from "../pnl.js";
 import type * as process from "../process.js";
 import type * as reports from "../reports.js";
+import type * as summaries from "../summaries.js";
 
 import type {
   ApiFromModules,
@@ -32,6 +37,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  crons: typeof crons;
   http: typeof http;
   inbound: typeof inbound;
   ledger: typeof ledger;
@@ -42,12 +48,16 @@ declare const fullApi: ApiFromModules<{
   "lib/money": typeof lib_money;
   "lib/mpesa": typeof lib_mpesa;
   "lib/periods": typeof lib_periods;
+  "lib/pnl": typeof lib_pnl;
   "lib/posting": typeof lib_posting;
   "lib/reply": typeof lib_reply;
+  "lib/summary": typeof lib_summary;
   "lib/whatsapp": typeof lib_whatsapp;
   outbox: typeof outbox;
+  pnl: typeof pnl;
   process: typeof process;
   reports: typeof reports;
+  summaries: typeof summaries;
 }>;
 
 /**
