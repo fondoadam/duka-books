@@ -38,7 +38,7 @@ Work now runs phase by phase from [roadmap.md](roadmap.md) ("implement phase N")
 - [x] Exact M-Pesa SMS parser (received, Till, sent, paid, paybill, transaction cost); duplicate codes refused
 - [x] Dry-run outbox + `pnpm simulate`; 34 tests incl. the full signed-webhook -> confirm -> journal loop
 - [ ] Muse Spark verified against real ledger photos (`pnpm smoke:extract`)
-- [ ] WhatsApp test number connected end to end
+- [x] WhatsApp test number connected end to end (Oct 29)
 
 ## Days
 

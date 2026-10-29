@@ -75,15 +75,18 @@ needs to swap providers and stubs without touching call sites.
 - [x] Convex cloud dev deployment `calm-warbler-133` (webhook: `https://calm-warbler-133.convex.site/whatsapp`),
       `EXTRACT_STUB=1` and `WHATSAPP_DRY_RUN=1` set; simulator loop (SMS, confirm, duplicate, photo) and the
       verify GET checked against it on Oct 29.
-- [ ] Meta app with WhatsApp: set `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, the real `WHATSAPP_APP_SECRET`
+- [x] Meta app with WhatsApp: set `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, the real `WHATSAPP_APP_SECRET`
       (also in `.env.local`, or the simulator stops signing correctly), unset `WHATSAPP_DRY_RUN`, connect the
-      webhook, subscribe to `messages`.
+      webhook, subscribe to `messages`. Oct 29: the app had to be **published**, and the WhatsApp account had to
+      be linked to it (`POST /1543128266783417/subscribed_apps`); it was only linked to the F8ware app.
 - [ ] On the phone: forward a real M-Pesa SMS → proposal → "Sawa, andika" → "Nimeandika rekodi 1". Forward it
       again → "tayari ziko kwenye vitabu". Send a photo → stub proposal.
 - [x] Mark messages as read and show the typing indicator while processing (`markRead(messageId)` in
       `lib/whatsapp.ts`, called at the start of `process.inbound`). Small, but the demo feels alive.
 - [ ] Create a permanent System User token now (temporary ones die in 24h, likely mid-demo).
-- [ ] Tick "WhatsApp test number connected end to end" in `plan.md`.
+- [x] Tick "WhatsApp test number connected end to end" in `plan.md`.
+- [ ] Parse Fuliza SMS exactly (draw = loan in, access fee = expense). The first real SMS sent was Fuliza and fell
+      through to the stub.
 
 **Done when:** the three phone checks above pass on the real test number.
 
