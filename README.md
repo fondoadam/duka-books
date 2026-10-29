@@ -58,6 +58,8 @@ pnpm smoke:extract "QK12AB34 Confirmed. Ksh650.00 received from JANE WANJIKU 071
 
 ### 2. Connect WhatsApp
 
+Full click-by-click guide, with troubleshooting: [docs/whatsapp-setup.md](docs/whatsapp-setup.md).
+
 1. In [developers.facebook.com](https://developers.facebook.com), create an app and add **WhatsApp**.
    Under API Setup, copy the temporary token and the phone number ID, and add your own number as a recipient.
 2. Set the Convex env vars:
