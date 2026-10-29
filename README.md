@@ -22,13 +22,17 @@ convex/
   http.ts           GET /whatsapp (verify) and POST /whatsapp (signed messages)
   inbound.ts        dedupe + store each message, schedule processing
   process.ts        image/text -> extraction -> proposal with Confirm/Reject buttons
-  ledger.ts         propose, and settle (confirm -> journal lines)
+  ledger.ts         propose, and settle (confirm -> journal lines); refuses a transaction code twice
+  outbox.ts         log of every reply (read by the simulator and tests)
   lib/ai.ts         Meta Model API provider
   lib/extract.ts    extraction prompt + Zod schema
+  lib/mpesa.ts      exact parser for forwarded M-Pesa SMS (the model handles everything else)
   lib/posting.ts    entry -> balanced debit/credit lines
   lib/whatsapp.ts   send text/buttons, download media, verify signature
 scripts/
   smoke-extract.ts  try extraction on a photo or SMS from the terminal
+  simulate.ts       play the shop owner against a deployment, no phone needed
+tests/              posting, M-Pesa parser, and the full webhook -> confirm -> journal loop
 docs/plan.md        scope, day-by-day plan, open questions
 samples/            your test photos (git-ignored)
 ```
@@ -69,11 +73,23 @@ pnpm smoke:extract "QK12AB34 Confirmed. Ksh650.00 received from JANE WANJIKU 071
 
 The temporary token expires after 24 hours. Before the demo, create a System User token in Business Settings.
 
+## Without a phone or model key
+
+Set `WHATSAPP_DRY_RUN=1` (replies go to the `outbox` table, not Meta) and `EXTRACT_STUB=1` (photos return
+fixed entries) on the deployment, and put the same `WHATSAPP_APP_SECRET` in `.env.local`. Then:
+
+```bash
+pnpm simulate "TJM1QRS3TU Confirmed. Ksh2,500.00 sent to JOHN KAMAU 0722000000 on 27/10/26 at 10:02 AM. ..."
+pnpm simulate confirm
+```
+
 ## Scripts
 
 | Command | What it does |
 | --- | --- |
 | `pnpm dev` | Run Convex dev: pushes functions on save |
 | `pnpm typecheck` | Type-check `convex/` |
+| `pnpm test` | Unit tests and the end-to-end WhatsApp loop (convex-test) |
 | `pnpm smoke:extract <file or text>` | Run extraction once, outside WhatsApp |
+| `pnpm simulate <text \| confirm \| reject>` | Send a signed fake webhook and print the replies |
 | `pnpm deploy` | Deploy to Convex production |

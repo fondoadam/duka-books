@@ -12,6 +12,7 @@ const extraction = z.object({
       kind: z.enum(["sale", "purchase", "expense", "payment_received", "payment_made"]),
       method: z.enum(["cash", "mpesa", "credit", "unknown"]),
       counterparty: z.string().nullable().describe("Customer or supplier name, if written"),
+      ref: z.string().nullable().describe("M-Pesa or receipt transaction code, if shown"),
     }),
   ),
   confidence: z.number().describe("0 to 1: how sure you are every amount was read correctly"),

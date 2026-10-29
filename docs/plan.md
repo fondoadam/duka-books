@@ -33,6 +33,8 @@ an evening summary, an answer to "nilipata faida ngapi wiki hii?", and a lender-
 - [x] Repo, Convex schema, signed WhatsApp webhook, dedupe
 - [x] Extraction (photo + text) to Zod schema with Muse Spark, proposal + Confirm/Reject buttons
 - [x] Double-entry posting on confirm
+- [x] Exact M-Pesa SMS parser (received, Till, sent, paid, paybill, transaction cost); duplicate codes refused
+- [x] Dry-run outbox + `pnpm simulate`; 34 tests incl. the full signed-webhook -> confirm -> journal loop
 - [ ] Muse Spark verified against real ledger photos (`pnpm smoke:extract`)
 - [ ] WhatsApp test number connected end to end
 

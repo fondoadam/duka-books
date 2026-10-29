@@ -8,6 +8,7 @@ function authHeaders() {
 }
 
 async function send(payload: Record<string, unknown>) {
+  if (process.env.WHATSAPP_DRY_RUN === "1") return; // replies are still logged in the outbox
   const res = await fetch(`${GRAPH}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
     method: "POST",
     headers: { ...authHeaders(), "Content-Type": "application/json" },

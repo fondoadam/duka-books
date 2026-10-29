@@ -13,8 +13,10 @@ import type * as inbound from "../inbound.js";
 import type * as ledger from "../ledger.js";
 import type * as lib_ai from "../lib/ai.js";
 import type * as lib_extract from "../lib/extract.js";
+import type * as lib_mpesa from "../lib/mpesa.js";
 import type * as lib_posting from "../lib/posting.js";
 import type * as lib_whatsapp from "../lib/whatsapp.js";
+import type * as outbox from "../outbox.js";
 import type * as process from "../process.js";
 
 import type {
@@ -29,8 +31,10 @@ declare const fullApi: ApiFromModules<{
   ledger: typeof ledger;
   "lib/ai": typeof lib_ai;
   "lib/extract": typeof lib_extract;
+  "lib/mpesa": typeof lib_mpesa;
   "lib/posting": typeof lib_posting;
   "lib/whatsapp": typeof lib_whatsapp;
+  outbox: typeof outbox;
   process: typeof process;
 }>;
 

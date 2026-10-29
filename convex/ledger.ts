@@ -1,8 +1,20 @@
 import { v } from "convex/values";
-import { internalMutation } from "./_generated/server";
+import { internalMutation, type MutationCtx } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 import { proposedEntry } from "./schema";
 import { post } from "./lib/posting";
 
+async function isPosted(ctx: MutationCtx, shopId: Id<"shops">, ref: string | null) {
+  if (!ref) return false;
+  const hit = await ctx.db
+    .query("journal")
+    .withIndex("by_shop_ref", (q) => q.eq("shopId", shopId).eq("ref", ref))
+    .first();
+  return hit !== null;
+}
+
+// Drops entries whose transaction code is already in the books, so a re-forwarded SMS isn't proposed twice.
+// proposalId is null when nothing new is left.
 export const propose = internalMutation({
   args: {
     shopId: v.id("shops"),
@@ -10,8 +22,13 @@ export const propose = internalMutation({
     entries: v.array(proposedEntry),
     confidence: v.number(),
   },
-  handler: async (ctx, args) => {
-    return await ctx.db.insert("proposals", { ...args, status: "pending" });
+  handler: async (ctx, { entries, ...args }) => {
+    const fresh = [];
+    for (const e of entries) if (!(await isPosted(ctx, args.shopId, e.ref))) fresh.push(e);
+    const duplicates = entries.length - fresh.length;
+    if (fresh.length === 0) return { proposalId: null, entries: fresh, duplicates };
+    const proposalId = await ctx.db.insert("proposals", { ...args, entries: fresh, status: "pending" });
+    return { proposalId, entries: fresh, duplicates };
   },
 });
 
@@ -26,15 +43,20 @@ export const settle = internalMutation({
     await ctx.db.patch(proposal._id, { status: confirm ? "confirmed" : "rejected" });
     if (!confirm) return { confirmed: false, count: 0 };
 
+    // Checked again here: two pending proposals can hold the same SMS.
+    let count = 0;
     for (const entry of proposal.entries) {
+      if (await isPosted(ctx, shopId, entry.ref)) continue;
       await ctx.db.insert("journal", {
         shopId,
         proposalId: proposal._id,
         date: entry.date,
         memo: entry.description,
+        ref: entry.ref,
         lines: post(entry),
       });
+      count++;
     }
-    return { confirmed: true, count: proposal.entries.length };
+    return { confirmed: true, count };
   },
 });

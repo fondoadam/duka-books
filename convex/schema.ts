@@ -25,6 +25,8 @@ export const proposedEntry = v.object({
   kind: entryKind,
   method: paymentMethod,
   counterparty: v.union(v.string(), v.null()),
+  // M-Pesa or receipt transaction code. The ledger refuses a ref it has already posted.
+  ref: v.union(v.string(), v.null()),
 });
 
 export const account = v.union(
@@ -79,6 +81,18 @@ export default defineSchema({
     proposalId: v.id("proposals"),
     date: v.string(),
     memo: v.string(),
+    ref: v.union(v.string(), v.null()),
     lines: v.array(v.object({ account, debitCents: v.number(), creditCents: v.number() })),
-  }).index("by_shop_date", ["shopId", "date"]),
+  })
+    .index("by_shop_date", ["shopId", "date"])
+    .index("by_shop_ref", ["shopId", "ref"]),
+
+  // Every message we send, logged before sending. With WHATSAPP_DRY_RUN=1 nothing reaches Meta, so the
+  // simulator and tests read replies from here.
+  outbox: defineTable({
+    to: v.string(),
+    body: v.string(),
+    buttons: v.union(v.array(v.object({ id: v.string(), title: v.string() })), v.null()),
+    dryRun: v.boolean(),
+  }).index("by_to", ["to"]),
 });
