@@ -10,6 +10,7 @@ import { kes } from "./lib/money";
 import { parseMpesa } from "./lib/mpesa";
 import { nairobiToday, resolvePeriod } from "./lib/periods";
 import { replier, type Reply } from "./lib/reply";
+import { segmentReceipts } from "./lib/segment";
 import { parseSpoken } from "./lib/spoken";
 import { asrStubbed, transcribe } from "./lib/transcribe";
 import { downloadMedia, isDryRun, markRead } from "./lib/whatsapp";
@@ -43,8 +44,11 @@ export const inbound = internalAction({
         const media = process.env.EXTRACT_STUB === "1"
           ? { bytes: new Uint8Array(), mimeType: "image/jpeg" }
           : await downloadMedia(inbound.mediaId);
-        const examples = await ctx.runQuery(internal.ledger.recentCorrections, { shopId: shop._id });
-        await propose(ctx, shop._id, inboundId, reply, await extractFromImage(media.bytes, media.mimeType, today, examples));
+        if (/risiti|receipt/i.test(inbound.text ?? "")) await onReceipts(ctx, shop._id, inboundId, reply, media, today);
+        else {
+          const examples = await ctx.runQuery(internal.ledger.recentCorrections, { shopId: shop._id });
+          await propose(ctx, shop._id, inboundId, reply, await extractFromImage(media.bytes, media.mimeType, today, examples));
+        }
       } else if (inbound.kind === "audio" && inbound.mediaId) {
         await onVoice(ctx, shop, inboundId, reply, inbound.mediaId, inbound.mimeType, today);
       } else {
@@ -116,6 +120,34 @@ async function onVoice(
   await onText(ctx, shop, inboundId, reply, transcript, today);
 }
 
+// A photo captioned "risiti": SAM 3 finds each receipt, the owner gets the numbered boxes back, every crop is
+// read in parallel, and one proposal groups the lines by receipt (numbering stays continuous for corrections).
+async function onReceipts(
+  ctx: ActionCtx,
+  shopId: Id<"shops">,
+  inboundId: Id<"inbound">,
+  reply: Reply,
+  media: { bytes: Uint8Array; mimeType: string },
+  today: string,
+) {
+  const { crops, annotated } = await segmentReceipts(media.bytes, media.mimeType);
+  const examples = await ctx.runQuery(internal.ledger.recentCorrections, { shopId });
+  if (crops.length <= 1) {
+    return propose(ctx, shopId, inboundId, reply, await extractFromImage(crops[0]?.bytes ?? media.bytes, media.mimeType, today, examples));
+  }
+  if (annotated) {
+    const storageId = await ctx.storage.store(new Blob([new Uint8Array(annotated)], { type: "image/jpeg" }));
+    const link = await ctx.storage.getUrl(storageId);
+    if (link) await reply.image(link, `🧾 Nimeona risiti ${crops.length} kwenye picha. Nazisoma moja moja…`);
+  }
+  const read = await Promise.all(crops.map((c) => extractFromImage(c.bytes, "image/jpeg", today, examples)));
+  await propose(ctx, shopId, inboundId, reply, {
+    entries: read.flatMap((r, i) => r.entries.map((e) => ({ ...e, group: i + 1 }))),
+    confidence: Math.min(...read.map((r) => r.confidence)),
+    notes: read.map((r, i) => r.notes && `Risiti ${i + 1}: ${r.notes}`).filter(Boolean).join("\n") || null,
+  });
+}
+
 const PNL = /^(p\s*&\s*l|pnl|ripoti ya mwezi|taarifa ya (mkopo|mwezi)|faida na hasara)\b/;
 
 // Fixed phrases the owner can type: the P&L PDF, today's summary, and turning the evening summary off or on.
@@ -149,8 +181,15 @@ async function correct(ctx: ActionCtx, shopId: Id<"shops">, reply: Reply, fix: C
   ]);
 }
 
-const lines = (entries: { description: string; amountCents: number; kind: string }[]) =>
-  entries.map((e, i) => `${i + 1}. ${e.description}: ${kes(e.amountCents)} (${e.kind})`);
+// One line per entry, numbered for corrections; lines from a split photo sit under "Risiti N" headers.
+function lines(entries: { description: string; amountCents: number; kind: string; group?: number }[]) {
+  const out: string[] = [];
+  entries.forEach((e, i) => {
+    if (e.group && e.group !== entries[i - 1]?.group) out.push(`🧾 Risiti ${e.group}:`);
+    out.push(`${i + 1}. ${e.description}: ${kes(e.amountCents)} (${e.kind})`);
+  });
+  return out;
+}
 
 // The agent needs a working model; until the key arrives (EXTRACT_STUB=1 or no key) the keyword router answers.
 function ask(ctx: ActionCtx, shopId: Id<"shops">, question: string, today: string) {
@@ -166,12 +205,15 @@ function ask(ctx: ActionCtx, shopId: Id<"shops">, question: string, today: strin
   );
 }
 
+// An extraction whose lines may carry the receipt they came from.
+type Grouped = Omit<Extraction, "entries"> & { entries: (Extraction["entries"][number] & { group?: number })[] };
+
 async function propose(
   ctx: ActionCtx,
   shopId: Id<"shops">,
   inboundId: Id<"inbound">,
   reply: Reply,
-  extraction: Extraction,
+  extraction: Grouped,
 ) {
   if (extraction.entries.length === 0) {
     await reply.text(`Sikuona rekodi yoyote ya pesa.${extraction.notes ? `\n${extraction.notes}` : ""}`);
@@ -186,6 +228,7 @@ async function propose(
     method: e.method,
     counterparty: e.counterparty,
     ref: e.ref,
+    ...(e.group && { group: e.group }),
   }));
   const { proposalId, entries, duplicates } = await ctx.runMutation(internal.ledger.propose, {
     shopId,

@@ -6,6 +6,7 @@
 //   pnpm simulate confirm        tap "Sawa, andika" on the latest proposal
 //   pnpm simulate reject         tap "Si sahihi"
 //   pnpm simulate photo          send a photo (needs EXTRACT_STUB=1 on the deployment: the media id is fake)
+//   pnpm simulate risiti         a photo captioned "risiti": receipt splitting (stub: three fixture receipts)
 //   pnpm simulate voice          send a voice note (the stubbed transcriber ignores the fake media id)
 //   pnpm simulate ripoti         today's summary; "ripoti ya mwezi" sends the P&L PDF (its link is printed)
 import { execFileSync } from "node:child_process";
@@ -37,8 +38,9 @@ if (input === "confirm" || input === "reject") {
   message = { type: "interactive", interactive: { type: "button_reply", button_reply: button } };
 } else if (input === "voice") {
   message = { type: "audio", audio: { id: `sim-media-${randomUUID()}`, mime_type: "audio/ogg; codecs=opus", voice: true } };
-} else if (input === "photo") {
-  message = { type: "image", image: { id: `sim-media-${randomUUID()}`, mime_type: "image/jpeg" } };
+} else if (input === "photo" || input === "risiti") {
+  const caption = input === "risiti" ? { caption: "risiti" } : {};
+  message = { type: "image", image: { id: `sim-media-${randomUUID()}`, mime_type: "image/jpeg", ...caption } };
 } else {
   message = { type: "text", text: { body: input } };
 }

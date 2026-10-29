@@ -318,3 +318,23 @@ describe("Voice notes", () => {
     expect(journal.map((j) => j.lines[0])).toEqual([{ account: "cash", debitCents: 15000, creditCents: 0 }]);
   });
 });
+
+describe("Receipt splitting", () => {
+  it("stub crops give one proposal with every receipt's entries, after the annotated photo", async () => {
+    vi.stubEnv("EXTRACT_STUB", "1");
+    const t = convexTest(schema, modules);
+    await deliver(t, webhook({ type: "image", image: { id: "fake-media", mime_type: "image/jpeg", caption: "Risiti za leo" } }));
+    const [proposal, annotated] = await t.query(internal.outbox.recent, { to: OWNER, limit: 2 });
+    expect(annotated.media).toMatchObject({ type: "image" });
+    expect(annotated.body).toContain("Nimeona risiti 3");
+    expect(proposal.body).toContain("Nimepata rekodi 6:");
+    expect(proposal.body).toContain("🧾 Risiti 1:\n1. Unga 2kg");
+    expect(proposal.body).toContain("🧾 Risiti 3:\n5. Unga 2kg");
+    // Numbering runs across receipts, so a correction still names one line.
+    await deliver(t, webhook({ type: "interactive", interactive: { type: "button_reply", button_reply: proposal.buttons![1] } }));
+    await deliver(t, webhook({ type: "text", text: { body: "futa 6" } }));
+    expect((await latest(t)).body).toContain("🧾 Risiti 3:\n5. Unga 2kg");
+    await deliver(t, webhook({ type: "interactive", interactive: { type: "button_reply", button_reply: (await latest(t)).buttons![0] } }));
+    expect(await t.run((ctx) => ctx.db.query("journal").collect())).toHaveLength(5);
+  });
+});

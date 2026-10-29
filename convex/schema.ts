@@ -31,6 +31,8 @@ export const proposedEntry = v.object({
   counterparty: v.union(v.string(), v.null()),
   // M-Pesa or receipt transaction code. The ledger refuses a ref it has already posted.
   ref: v.union(v.string(), v.null()),
+  // Which receipt (1, 2, …) of a split photo the line came from. Display only; posting ignores it.
+  group: v.optional(v.number()),
 });
 
 export const account = v.union(
