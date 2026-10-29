@@ -83,7 +83,7 @@ needs to swap providers and stubs without touching call sites.
       again → "tayari ziko kwenye vitabu". Send a photo → stub proposal.
 - [x] Mark messages as read and show the typing indicator while processing (`markRead(messageId)` in
       `lib/whatsapp.ts`, called at the start of `process.inbound`). Small, but the demo feels alive.
-- [ ] Create a permanent System User token now (temporary ones die in 24h, likely mid-demo).
+- [x] Create a permanent System User token now (Oct 29: `dukabooksbot`, Employee role, in the F8warechat portfolio) (temporary ones die in 24h, likely mid-demo).
 - [x] Tick "WhatsApp test number connected end to end" in `plan.md`.
 - [ ] Parse Fuliza SMS exactly (draw = loan in, access fee = expense). The first real SMS sent was Fuliza and fell
       through to the stub.
