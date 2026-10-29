@@ -30,7 +30,7 @@ phone loop works today.
 | 2 | Ask the books (agent tools) | No (tools) / Yes (agent) | Meta tooling, Impact | [x] |
 | 3 | Corrections ("Si sahihi") | No | Technical depth, Demo | [x] |
 | 4 | Summaries, debtors, P&L PDF | No | Impact | [x] |
-| 5 | Voice notes | Depends on ASR path | Meta tooling, Impact | [ ] |
+| 5 | Voice notes | Depends on ASR path | Meta tooling, Impact | [x] stub (real ASR: your step) |
 | 6 | SAM 3.1 receipt splitting | No (hosted SAM) | Meta tooling | [ ] |
 | 7 | Key day: Muse Spark live | **Yes** | Meta tooling, Demo | [ ] |
 | 8 | Real shop week + demo video | Yes | Demo, Impact | [ ] |
@@ -194,12 +194,31 @@ link returned `200 application/pdf`, starting `%PDF-1.7`, and renders as a one-p
 
 **Files:** create `convex/lib/transcribe.ts`, modify `convex/process.ts`; `tests/flow.test.ts`
 
-- [ ] `transcribe(bytes: Uint8Array, mimeType: string): Promise<string>`, provider from `ASR_PROVIDER`;
+- [x] `transcribe(bytes: Uint8Array, mimeType: string): Promise<string>`, provider from `ASR_PROVIDER`;
       `ASR_STUB=1` returns *"Nimeuza mkate tatu kwa shilingi mia moja hamsini"*.
       WhatsApp voice notes are `audio/ogg; codecs=opus`; convert only if the provider needs it.
-- [ ] `process.ts`: audio → transcribe → echo the transcript ("Nimesikia: …") → `extractFromText` → proposal.
+- [x] `process.ts`: audio → transcribe → echo the transcript ("Nimesikia: …") → `extractFromText` → proposal.
       A spoken question goes to `ask` like text.
-- [ ] Tests: "a voice note with ASR_STUB proposes the transcribed sale".
+- [x] Tests: "a voice note with ASR_STUB proposes the transcribed sale".
+
+- [x] Extra: `lib/spoken.ts` reads simple spoken or typed records exactly ("Nimeuza mkate tatu kwa shilingi mia moja
+      hamsini" → sale KES 150, qty 3; Swahili number words up to the thousands), so the voice demo books the right
+      figure even with extraction stubbed. Anything it isn't sure of goes to the model.
+
+Oct 29: the stub path works end to end on `calm-warbler-133` (`pnpm simulate voice` → "Nimesikia: …" → proposal
+"Mkate: KES 150"). **Real ASR is not live**: no free, card-less host serves a Meta ASR model today. Meta's own
+Space `facebook/omniasr-transcriptions` is paused (needs an A100), the community copies error out, and no Hugging
+Face inference provider serves `facebook/mms-1b-all` or `omniASR`. On the phone a real voice note gets the stub
+sentence, labelled "Majaribio".
+
+**Your steps to make it real (any one):**
+1. Ask on the hackathon Discord whether the Meta Model API takes audio input for Muse Spark. If yes, tell me and I
+   add `ASR_PROVIDER=meta` (a small change in `lib/transcribe.ts`).
+2. With partner credits (Modal, Baseten): deploy `infra/modal_app.py` (`modal deploy infra/modal_app.py`, see the
+   file's header). It serves Omnilingual ASR at `/v1/audio/transcriptions`. Then on the deployment:
+   `npx convex env set ASR_PROVIDER compat`, `ASR_BASE_URL https://<app>.modal.run/v1`, `ASR_MODEL omniASR_LLM_7B`,
+   `ASR_API_KEY <the token you set in Modal>`.
+3. Send a real Swahili voice note from the phone and check that the "Nimesikia" echo is right.
 
 **Done when:** a real Swahili voice note on the phone becomes a correct proposal (or, without ASR access, the stub path works and the gap is noted in `plan.md`).
 

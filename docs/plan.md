@@ -63,5 +63,7 @@ Keep SAM 3.1: "Use of Meta AI tooling" is 25% of the score.
 - Does the Meta Model API accept `response_format: json_schema`? If not, set `supportsStructuredOutputs: false`
   in `convex/lib/ai.ts`.
 - Speech: does the Meta Model API offer transcription for Swahili, or should Omnilingual ASR (open weights) run on
-  Modal/Baseten? Ask on Discord.
+  Modal/Baseten? Ask on Discord. **Gap (Oct 29):** voice notes run on the ASR stub. No card-less host serves a
+  Meta ASR model (the official `facebook/omniasr-transcriptions` Space is paused; no HF inference provider serves
+  MMS or omniASR). The code takes any OpenAI-compatible `/audio/transcriptions` host by env; steps in roadmap Phase 5.
 - Which partner credits (Baseten/Modal/Fireworks) were granted?
