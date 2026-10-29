@@ -147,4 +147,24 @@ describe("WhatsApp loop", () => {
     await deliver(t, webhook({ type: "text", text: { body: "nimeuza unga tatu" } }));
     expect((await latest(t)).body).toContain("Nimepata rekodi 2");
   });
+
+  it("keyword router answers 'faida wiki hii' from journal data", async () => {
+    vi.setSystemTime(new Date("2026-10-29T07:00:00+03:00"));
+    const t = convexTest(schema, modules);
+    const confirmLatest = async () => {
+      const button = (await latest(t)).buttons!.find((b) => b.id.startsWith("confirm:"))!;
+      await deliver(t, webhook({ type: "interactive", interactive: { type: "button_reply", button_reply: button } }));
+    };
+    await deliver(t, webhook({ type: "text", text: { body: "TJK4H7XYZ2 Confirmed.You have received Ksh650.00 from JANE WANJIKU 0712345678 on 27/10/26 at 9:14 AM" } }));
+    await confirmLatest();
+    await deliver(t, webhook({ type: "text", text: { body: "TJP7ABC8DF Confirmed. Ksh480.00 paid to BIDCO DISTRIBUTORS. on 28/10/26 at 11:30 AM.New M-PESA balance is Ksh200.00. Transaction cost, Ksh0.00." } }));
+    await confirmLatest();
+    // Last week: outside the answer.
+    await deliver(t, webhook({ type: "text", text: { body: SMS } }));
+    await confirmLatest();
+
+    await deliver(t, webhook({ type: "text", text: { body: "nilipata faida ngapi wiki hii?" } }));
+    expect((await latest(t)).body).toBe("Faida wiki hii: KES 170\nMauzo KES 650, manunuzi KES 480, matumizi KES 0.");
+    expect(await t.run((ctx) => ctx.db.query("proposals").collect())).toHaveLength(3);
+  });
 });

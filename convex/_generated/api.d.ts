@@ -12,12 +12,16 @@ import type * as http from "../http.js";
 import type * as inbound from "../inbound.js";
 import type * as ledger from "../ledger.js";
 import type * as lib_ai from "../lib/ai.js";
+import type * as lib_ask from "../lib/ask.js";
 import type * as lib_extract from "../lib/extract.js";
+import type * as lib_money from "../lib/money.js";
 import type * as lib_mpesa from "../lib/mpesa.js";
+import type * as lib_periods from "../lib/periods.js";
 import type * as lib_posting from "../lib/posting.js";
 import type * as lib_whatsapp from "../lib/whatsapp.js";
 import type * as outbox from "../outbox.js";
 import type * as process from "../process.js";
+import type * as reports from "../reports.js";
 
 import type {
   ApiFromModules,
@@ -30,12 +34,16 @@ declare const fullApi: ApiFromModules<{
   inbound: typeof inbound;
   ledger: typeof ledger;
   "lib/ai": typeof lib_ai;
+  "lib/ask": typeof lib_ask;
   "lib/extract": typeof lib_extract;
+  "lib/money": typeof lib_money;
   "lib/mpesa": typeof lib_mpesa;
+  "lib/periods": typeof lib_periods;
   "lib/posting": typeof lib_posting;
   "lib/whatsapp": typeof lib_whatsapp;
   outbox: typeof outbox;
   process: typeof process;
+  reports: typeof reports;
 }>;
 
 /**

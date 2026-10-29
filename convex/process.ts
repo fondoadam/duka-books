@@ -2,9 +2,12 @@ import { v } from "convex/values";
 import { internalAction, type ActionCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
+import { textModel } from "./lib/ai";
+import { answer, isQuestion } from "./lib/ask";
 import { extractFromImage, extractFromText, type Extraction } from "./lib/extract";
 import { kes } from "./lib/money";
 import { parseMpesa } from "./lib/mpesa";
+import { resolvePeriod } from "./lib/periods";
 import { downloadMedia, markRead, sendButtons, sendText } from "./lib/whatsapp";
 
 const nairobiToday = () => new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Nairobi" });
@@ -57,7 +60,10 @@ export const inbound = internalAction({
             : await downloadMedia(inbound.mediaId);
           extraction = await extractFromImage(media.bytes, media.mimeType, today);
         } else if (inbound.kind === "text" && inbound.text) {
-          extraction = parseMpesa(inbound.text, today) ?? (await extractFromText(inbound.text, today));
+          const mpesa = parseMpesa(inbound.text, today);
+          if (mpesa) extraction = mpesa;
+          else if (isQuestion(inbound.text)) await reply.text(await ask(ctx, shop._id, inbound.text, today));
+          else extraction = await extractFromText(inbound.text, today);
         } else if (inbound.kind === "audio") {
           // TODO(day 2): transcribe Swahili/Sheng voice notes, then extractFromText.
           await reply.text("Sauti bado haijawezeshwa. Tafadhali tuma picha au ujumbe wa maandishi.");
@@ -76,6 +82,20 @@ export const inbound = internalAction({
     }
   },
 });
+
+// The agent needs a working model; until the key arrives (EXTRACT_STUB=1 or no key) the keyword router answers.
+function ask(ctx: ActionCtx, shopId: Id<"shops">, question: string, today: string) {
+  const live = process.env.EXTRACT_STUB !== "1" && !!process.env.MODEL_API_KEY;
+  return answer(
+    question,
+    {
+      totals: (period) => ctx.runQuery(internal.reports.totals, { shopId, ...resolvePeriod(period, today) }),
+      debtors: () => ctx.runQuery(internal.reports.debtors, { shopId }),
+      loans: () => ctx.runQuery(internal.reports.loans, { shopId }),
+    },
+    live ? textModel() : undefined,
+  );
+}
 
 async function propose(
   ctx: ActionCtx,
