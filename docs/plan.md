@@ -30,6 +30,8 @@ an evening summary, an answer to "nilipata faida ngapi wiki hii?", and a lender-
 
 ## Status
 
+Work now runs phase by phase from [roadmap.md](roadmap.md) ("implement phase N").
+
 - [x] Repo, Convex schema, signed WhatsApp webhook, dedupe
 - [x] Extraction (photo + text) to Zod schema with Muse Spark, proposal + Confirm/Reject buttons
 - [x] Double-entry posting on confirm
