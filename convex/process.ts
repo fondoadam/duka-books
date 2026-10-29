@@ -140,7 +140,11 @@ async function onReceipts(
   media: { bytes: Uint8Array; mimeType: string },
   today: string,
 ) {
-  const { crops, annotated } = await segmentReceipts(media.bytes, media.mimeType);
+  // A SAM failure (a used-up Space quota, a cold start) shouldn't lose the photo: read it whole instead.
+  const { crops, annotated } = await segmentReceipts(media.bytes, media.mimeType).catch((err) => {
+    console.error("SAM failed, reading the photo whole:", err);
+    return { crops: [], annotated: null };
+  });
   const examples = await ctx.runQuery(internal.ledger.recentCorrections, { shopId });
   if (crops.length <= 1) {
     return propose(ctx, shopId, inboundId, reply, await extractFromImage(crops[0]?.bytes ?? media.bytes, media.mimeType, today, examples));
@@ -148,7 +152,7 @@ async function onReceipts(
   if (annotated) {
     const storageId = await ctx.storage.store(new Blob([new Uint8Array(annotated)], { type: "image/jpeg" }));
     const link = await ctx.storage.getUrl(storageId);
-    const test = segmentStubbed() ? "\n(Majaribio: picha ya mfano, si yako.)" : "";
+    const test = media.bytes.length === 0 ? "\n(Majaribio: picha ya mfano, si yako.)" : "";
     if (link) await reply.image(link, `🧾 Nimeona risiti ${crops.length} kwenye picha. Nazisoma moja moja…${test}`);
   }
   const read = await Promise.all(crops.map((c) => extractFromImage(c.bytes, "image/jpeg", today, examples)));

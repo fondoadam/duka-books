@@ -29,7 +29,7 @@ the owner can take to a SACCO or bank.
 | **Muse Spark** (Meta Model API) | Vision extraction of handwritten Swahili/Sheng ledgers and receipts into a Zod schema | `convex/lib/extract.ts` | Built and wired. Waiting on the API key (card); a stub runs meanwhile |
 | **Muse Spark** agent with tools | Answers questions with `get_totals(period)`, `get_debtors()`, `get_fuliza_balance()`. A figure guard rejects any number the tools didn't return | `convex/lib/ask.ts` | Covered by mock-model tests. A keyword router gives the same answers until the key arrives |
 | **Muse Spark** | Maps free-form corrections ("sukari ilikuwa mia nne hamsini", the sugar was 450) onto a line fix | `convex/lib/corrections.ts` | Covered by mock-model tests. Exact rules handle `2 = 450` today |
-| **SAM 3 / 3.1** | Finds every receipt in one photo (text prompt "receipt"), then crops and annotates | `convex/lib/segment.ts`, `infra/modal_app.py` | Gradio Space client tested live (masks returned); needs a free HF token. Self-host on Modal also written |
+| **SAM 3 / 3.1** | Finds every receipt in one photo (text prompt "receipt"), then crops and annotates | `convex/lib/segment.ts`, `infra/modal_app.py` | **Live** on the dev deployment through a free Hugging Face ZeroGPU Space: 3 real receipts → 3 boxes in about 3 s. Self-host on Modal also written |
 | **Omnilingual ASR** (open weights) | Swahili voice notes | `convex/lib/transcribe.ts`, `infra/modal_app.py` | Seam and stub built. No card-free host exists yet (see roadmap Phase 5) |
 | **Llama 4** (open weights), fallback | The same extraction and agent on an OpenAI-compatible partner host | `convex/lib/ai.ts` (`MODEL_PROVIDER=compat`) | One env change |
 

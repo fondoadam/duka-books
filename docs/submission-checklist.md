@@ -7,7 +7,7 @@ https://cerebralvalley.ai/e/meta-ai-developer-hackathon/hackathon/submit
 
 - [ ] Model key (or Llama fallback) live: `npx convex env set MODEL_API_KEY …`. Check one real ledger photo on the phone (roadmap Phase 7).
 - [ ] `pnpm eval` on 5–10 real samples: every amount right on at least 8 of 10.
-- [ ] SAM: `HF_TOKEN` + `SEGMENT_PROVIDER=hf-space` set; a photo of 3 real receipts captioned *risiti* gives 3 groups (Phase 6).
+- [ ] SAM: ~~`HF_TOKEN` + `SEGMENT_PROVIDER=hf-space` set~~ (done Oct 29); a photo of 3 real receipts captioned *risiti* gives 3 groups (Phase 6).
 - [ ] Voice: a real ASR host, or say plainly in the write-up and video that voice runs on a stub (Phase 5).
 - [ ] Phone checks from roadmap Phase 1 pass on the real test number (SMS → confirm → duplicate refused → photo).
 - [ ] Clear test data from the real shop if needed, so the week's numbers are clean.

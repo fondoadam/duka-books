@@ -253,9 +253,14 @@ inside the normal Convex runtime (it needs a two-line `Buffer` shim there).
 - **`http`**: your own SAM 3.1 server, `infra/modal_app.py` (also serves Omnilingual ASR). **Untested**: no
   Modal access or SAM 3.1 weight approval here.
 
+Oct 29, later: **SAM 3 is live on `calm-warbler-133`** (`HF_TOKEN` and `SEGMENT_PROVIDER=hf-space` set).
+With the token, a photo of three real receipts (public Wikimedia photos on a dark table) came back as 3 tight
+boxes around the paper, not the hand or table, in 3.3 s. A single-document photo stays whole. If SAM fails
+(quota, cold start), the photo is read whole instead of failing. The simulator still uses the fixture.
+
 **Your steps to make it real (no card needed for the first):**
-1. Make a free Hugging Face account → Settings → Access Tokens → a **read** token.
-2. `npx convex env set HF_TOKEN hf_...` and `npx convex env set SEGMENT_PROVIDER hf-space` on `calm-warbler-133`.
+1. ~~Make a free Hugging Face account → Settings → Access Tokens → a **read** token.~~ Done.
+2. ~~`npx convex env set HF_TOKEN hf_...` and `npx convex env set SEGMENT_PROVIDER hf-space`.~~ Done.
 3. From the phone, send a photo of 3 receipts with the caption **risiti**. Expect the numbered photo, then one
    proposal with three groups. (Until the model key works, each group holds the stub lines; the split itself
    is real.) If boxes are missed, try `npx convex env set SEGMENT_THRESHOLD 0.15`.

@@ -330,4 +330,39 @@ describe("Receipt splitting", () => {
     await deliver(t, webhook({ type: "interactive", interactive: { type: "button_reply", button_reply: (await latest(t)).buttons![0] } }));
     expect(await t.run((ctx) => ctx.db.query("journal").collect())).toHaveLength(5);
   });
+
+  it("with SAM live, the simulator's empty photo still uses the fixture", async () => {
+    vi.stubEnv("SEGMENT_PROVIDER", "hf-space");
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const t = convexTest(schema, modules);
+    await deliver(t, webhook({ type: "image", image: { id: "fake-media", mime_type: "image/jpeg", caption: "risiti" }, duka_sim: true }));
+    const [proposal, annotated] = await t.query(internal.outbox.recent, { to: OWNER, limit: 2 });
+    expect(annotated.body).toContain("Nimeona risiti 3");
+    expect(annotated.body).toContain("Majaribio");
+    expect(proposal.body).toContain("🧾 Risiti 3:");
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+
+  it("when SAM fails (e.g. quota), the photo is read whole instead of failing", async () => {
+    vi.stubEnv("SEGMENT_PROVIDER", "hf-space");
+    vi.stubEnv("WHATSAPP_TOKEN", "t");
+    const { encodeJpeg, receiptsFixture } = await import("../convex/lib/segment");
+    const photo = encodeJpeg(receiptsFixture());
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.endsWith("/fake-media")) return Response.json({ url: "https://lookaside.example/photo", mime_type: "image/jpeg" });
+      if (url === "https://lookaside.example/photo") return new Response(photo);
+      return new Response("ZeroGPU runs limit", { status: 429 });
+    });
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const t = convexTest(schema, modules);
+    await deliver(t, webhook({ type: "image", image: { id: "fake-media", mime_type: "image/jpeg", caption: "risiti" } }));
+    const proposal = await latest(t);
+    expect(proposal.body).toContain("Nimepata rekodi");
+    expect(proposal.body).not.toContain("🧾 Risiti");
+    const [row] = await t.run((ctx) => ctx.db.query("inbound").collect());
+    expect(row.status).toBe("processed");
+    fetchSpy.mockRestore();
+  });
 });

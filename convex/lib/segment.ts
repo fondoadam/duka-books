@@ -210,12 +210,12 @@ export async function segmentReceipts(bytes: Uint8Array, mimeType: string): Prom
   const whole = { crops: [{ bytes, box: [0, 0, 0, 0] as Box }], annotated: null };
   let img: Image;
   let boxes: Box[];
-  if (segmentStubbed()) {
-    if (bytes.length > 0) return whole;
+  // Empty bytes come from the simulator, which never downloads: show the fixture whether SAM is live or not.
+  if (bytes.length === 0) {
     img = receiptsFixture();
     boxes = FIXTURE_BOXES;
   } else {
-    if (!isJpeg(bytes)) return whole;
+    if (segmentStubbed() || !isJpeg(bytes)) return whole;
     img = decodeJpeg(bytes);
     boxes = cleanBoxes(await findReceipts(bytes, mimeType), img.width, img.height);
     if (boxes.length <= 1) return whole;
