@@ -141,10 +141,13 @@ async function onReceipts(
     if (link) await reply.image(link, `🧾 Nimeona risiti ${crops.length} kwenye picha. Nazisoma moja moja…`);
   }
   const read = await Promise.all(crops.map((c) => extractFromImage(c.bytes, "image/jpeg", today, examples)));
+  const notes = read.map((r) => r.notes);
   await propose(ctx, shopId, inboundId, reply, {
     entries: read.flatMap((r, i) => r.entries.map((e) => ({ ...e, group: i + 1 }))),
     confidence: Math.min(...read.map((r) => r.confidence)),
-    notes: read.map((r, i) => r.notes && `Risiti ${i + 1}: ${r.notes}`).filter(Boolean).join("\n") || null,
+    notes: notes.every((n) => n === notes[0])
+      ? notes[0]
+      : notes.map((n, i) => n && `Risiti ${i + 1}: ${n}`).filter(Boolean).join("\n") || null,
   });
 }
 

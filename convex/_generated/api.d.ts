@@ -22,6 +22,7 @@ import type * as lib_periods from "../lib/periods.js";
 import type * as lib_pnl from "../lib/pnl.js";
 import type * as lib_posting from "../lib/posting.js";
 import type * as lib_reply from "../lib/reply.js";
+import type * as lib_segment from "../lib/segment.js";
 import type * as lib_spoken from "../lib/spoken.js";
 import type * as lib_summary from "../lib/summary.js";
 import type * as lib_transcribe from "../lib/transcribe.js";
@@ -53,6 +54,7 @@ declare const fullApi: ApiFromModules<{
   "lib/pnl": typeof lib_pnl;
   "lib/posting": typeof lib_posting;
   "lib/reply": typeof lib_reply;
+  "lib/segment": typeof lib_segment;
   "lib/spoken": typeof lib_spoken;
   "lib/summary": typeof lib_summary;
   "lib/transcribe": typeof lib_transcribe;

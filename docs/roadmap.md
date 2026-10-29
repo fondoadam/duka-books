@@ -31,7 +31,7 @@ phone loop works today.
 | 3 | Corrections ("Si sahihi") | No | Technical depth, Demo | [x] |
 | 4 | Summaries, debtors, P&L PDF | No | Impact | [x] |
 | 5 | Voice notes | Depends on ASR path | Meta tooling, Impact | [x] stub (real ASR: your step) |
-| 6 | SAM 3.1 receipt splitting | No (hosted SAM) | Meta tooling | [ ] |
+| 6 | SAM 3.1 receipt splitting | No (hosted SAM) | Meta tooling | [x] stub + SAM 3 Space client (token: your step) |
 | 7 | Key day: Muse Spark live | **Yes** | Meta tooling, Demo | [ ] |
 | 8 | Real shop week + demo video | Yes | Demo, Impact | [ ] |
 | 9 | Write-up and submit | No | All | [ ] |
@@ -231,15 +231,36 @@ sentence, labelled "Majaribio".
 
 **Files:** create `convex/lib/segment.ts`, modify `convex/process.ts`; `tests/segment.test.ts`
 
-- [ ] Host SAM 3.1 (open weights) on Modal/Baseten/Replicate, or use Meta's hosted endpoint if one exists.
+- [x] Host SAM 3.1 (open weights) on Modal/Baseten/Replicate, or use Meta's hosted endpoint if one exists.
       Text prompt `"receipt"`; return boxes/masks.
-- [ ] `segmentReceipts(bytes, mimeType): Promise<{ bytes: Uint8Array; box: [x, y, w, h] }[]>`: crop each box
+- [x] `segmentReceipts(bytes, mimeType): Promise<{ bytes: Uint8Array; box: [x, y, w, h] }[]>`: crop each box
       (pad 2%), drop boxes under 5% of the image area. `SEGMENT_STUB=1` returns the whole image once.
-- [ ] `process.ts`: caption or owner text "risiti" (or a cheap model check later) → segment → extract each crop in
+- [x] `process.ts`: caption or owner text "risiti" (or a cheap model check later) → segment → extract each crop in
       parallel → one proposal grouping entries by receipt ("Risiti 1: …, Risiti 2: …").
       One receipt found → same as today's single-photo path.
-- [ ] Save an annotated image (boxes + numbers) and send it back before the proposal: makes the SAM step visible in the demo video.
-- [ ] Tests: "crops fall inside the image", "tiny boxes are dropped", "two stub crops give one proposal with both receipts' entries".
+- [x] Save an annotated image (boxes + numbers) and send it back before the proposal: makes the SAM step visible in the demo video.
+- [x] Tests: "crops fall inside the image", "tiny boxes are dropped", "two stub crops give one proposal with both receipts' entries".
+
+Oct 29: built in `convex/lib/segment.ts` with three providers. `jpeg-js` crops and draws the numbered boxes
+inside the normal Convex runtime (it needs a two-line `Buffer` shim there).
+- **stub** (default, live today): a real photo stays one receipt. The simulator's empty photo becomes a generated
+  three-receipt fixture, so `pnpm simulate risiti` shows the annotated photo and a proposal grouped "Risiti 1/2/3".
+  ✅ checked on `calm-warbler-133`.
+- **`hf-space`**: SAM 3 on the free ZeroGPU Space `prithivMLmods/SAM3-Demo` through its Gradio API
+  (upload → `run_image_segmentation(image, "receipt", 0.25)` → one mask PNG per receipt → boxes). Tried live
+  from this machine: two calls returned receipt masks, then the anonymous quota ran out ("ZeroGPU runs limit").
+  A free HF token lifts the quota. The protocol is covered by a mocked test.
+- **`http`**: your own SAM 3.1 server, `infra/modal_app.py` (also serves Omnilingual ASR). **Untested**: no
+  Modal access or SAM 3.1 weight approval here.
+
+**Your steps to make it real (no card needed for the first):**
+1. Make a free Hugging Face account → Settings → Access Tokens → a **read** token.
+2. `npx convex env set HF_TOKEN hf_...` and `npx convex env set SEGMENT_PROVIDER hf-space` on `calm-warbler-133`.
+3. From the phone, send a photo of 3 receipts with the caption **risiti**. Expect the numbered photo, then one
+   proposal with three groups. (Until the model key works, each group holds the stub lines; the split itself
+   is real.) If boxes are missed, try `npx convex env set SEGMENT_THRESHOLD 0.15`.
+4. If the Space is down or slow on the day, duplicate it to your account, or use `infra/modal_app.py` with
+   partner credits and `SEGMENT_PROVIDER=http`.
 
 **Done when:** a photo of 3 real receipts yields 3 groups in one proposal.
 
