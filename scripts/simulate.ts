@@ -6,6 +6,7 @@
 //   pnpm simulate confirm        tap "Sawa, andika" on the latest proposal
 //   pnpm simulate reject         tap "Si sahihi"
 //   pnpm simulate photo          send a photo (needs EXTRACT_STUB=1 on the deployment: the media id is fake)
+//   pnpm simulate voice          send a voice note (the stubbed transcriber ignores the fake media id)
 //   pnpm simulate ripoti         today's summary; "ripoti ya mwezi" sends the P&L PDF (its link is printed)
 import { execFileSync } from "node:child_process";
 import { createHmac, randomUUID } from "node:crypto";
@@ -34,6 +35,8 @@ if (input === "confirm" || input === "reject") {
   const button = before.flatMap((m) => m.buttons ?? []).find((b) => b.id.startsWith(`${input}:`));
   if (!button) throw new Error("No proposal with buttons in the outbox yet. Send a message first.");
   message = { type: "interactive", interactive: { type: "button_reply", button_reply: button } };
+} else if (input === "voice") {
+  message = { type: "audio", audio: { id: `sim-media-${randomUUID()}`, mime_type: "audio/ogg; codecs=opus", voice: true } };
 } else if (input === "photo") {
   message = { type: "image", image: { id: `sim-media-${randomUUID()}`, mime_type: "image/jpeg" } };
 } else {

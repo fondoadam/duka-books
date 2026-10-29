@@ -303,3 +303,18 @@ describe("Reports on WhatsApp", () => {
     expect(files[0].contentType).toBe("application/pdf");
   });
 });
+
+describe("Voice notes", () => {
+  it("a voice note with ASR_STUB proposes the transcribed sale", async () => {
+    vi.stubEnv("ASR_STUB", "1");
+    vi.stubEnv("EXTRACT_STUB", "1");
+    const t = convexTest(schema, modules);
+    await deliver(t, webhook({ type: "audio", audio: { id: "fake-voice", mime_type: "audio/ogg; codecs=opus" } }));
+    const [proposal, heard] = await t.query(internal.outbox.recent, { to: OWNER, limit: 2 });
+    expect(heard.body).toContain('Nimesikia: "Nimeuza mkate tatu kwa shilingi mia moja hamsini"');
+    expect(proposal.body).toContain("1. Mkate: KES 150 (sale)");
+    await deliver(t, webhook({ type: "interactive", interactive: { type: "button_reply", button_reply: proposal.buttons![0] } }));
+    const journal = await t.run((ctx) => ctx.db.query("journal").collect());
+    expect(journal.map((j) => j.lines[0])).toEqual([{ account: "cash", debitCents: 15000, creditCents: 0 }]);
+  });
+});

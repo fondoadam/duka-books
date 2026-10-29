@@ -10,6 +10,8 @@ import { kes } from "./lib/money";
 import { parseMpesa } from "./lib/mpesa";
 import { nairobiToday, resolvePeriod } from "./lib/periods";
 import { replier, type Reply } from "./lib/reply";
+import { parseSpoken } from "./lib/spoken";
+import { asrStubbed, transcribe } from "./lib/transcribe";
 import { downloadMedia, isDryRun, markRead } from "./lib/whatsapp";
 import { sendPnl } from "./pnl";
 import { buildSummary } from "./summaries";
@@ -43,9 +45,8 @@ export const inbound = internalAction({
           : await downloadMedia(inbound.mediaId);
         const examples = await ctx.runQuery(internal.ledger.recentCorrections, { shopId: shop._id });
         await propose(ctx, shop._id, inboundId, reply, await extractFromImage(media.bytes, media.mimeType, today, examples));
-      } else if (inbound.kind === "audio") {
-        // TODO(day 2): transcribe Swahili/Sheng voice notes, then extractFromText.
-        await reply.text("Sauti bado haijawezeshwa. Tafadhali tuma picha au ujumbe wa maandishi.");
+      } else if (inbound.kind === "audio" && inbound.mediaId) {
+        await onVoice(ctx, shop, inboundId, reply, inbound.mediaId, inbound.mimeType, today);
       } else {
         await reply.text("Tuma picha ya daftari au risiti, au ujumbe wa M-Pesa.");
       }
@@ -87,12 +88,32 @@ async function onText(ctx: ActionCtx, shop: Doc<"shops">, inboundId: Id<"inbound
   if (fix) return correct(ctx, shop._id, reply, fix);
   if (await onCommand(ctx, shop, reply, text, today)) return;
 
-  const mpesa = parseMpesa(text, today);
-  if (mpesa) return propose(ctx, shop._id, inboundId, reply, mpesa);
+  // Exact parsers first (M-Pesa SMS, simple spoken records); the model only sees what they can't read.
+  const exact = parseMpesa(text, today) ?? parseSpoken(text, today);
+  if (exact) return propose(ctx, shop._id, inboundId, reply, exact);
   if (isQuestion(text)) return reply.text(await ask(ctx, shop._id, text, today));
   if (correcting) return reply.text(`Sijaelewa marekebisho hayo.\n${CORRECTION_HELP}\nAu andika 'Ghairi'.`);
   const examples = await ctx.runQuery(internal.ledger.recentCorrections, { shopId: shop._id });
   return propose(ctx, shop._id, inboundId, reply, await extractFromText(text, today, examples));
+}
+
+// A voice note is transcribed, echoed back so the owner can check what was heard, then handled like text.
+async function onVoice(
+  ctx: ActionCtx,
+  shop: Doc<"shops">,
+  inboundId: Id<"inbound">,
+  reply: Reply,
+  mediaId: string,
+  mimeType: string | null,
+  today: string,
+) {
+  // The stub ignores the audio, so the simulator's fake media ids are never downloaded.
+  const stub = asrStubbed();
+  const media = stub ? { bytes: new Uint8Array(), mimeType: mimeType ?? "audio/ogg" } : await downloadMedia(mediaId);
+  const transcript = await transcribe(media.bytes, media.mimeType);
+  if (!transcript) return reply.text("Sikusikia maneno yoyote. Jaribu tena, au andika ujumbe.");
+  await reply.text(`🎙️ Nimesikia: "${transcript}"${stub ? "\n(Majaribio: sauti yako haijasomwa bado.)" : ""}`);
+  await onText(ctx, shop, inboundId, reply, transcript, today);
 }
 
 const PNL = /^(p\s*&\s*l|pnl|ripoti ya mwezi|taarifa ya (mkopo|mwezi)|faida na hasara)\b/;
