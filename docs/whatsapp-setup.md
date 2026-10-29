@@ -111,6 +111,20 @@ keeps signing its fake webhooks correctly.
 5. Under **Webhook fields**, click **Manage** and **Subscribe** to **messages**. Nothing else is needed.
    Without this, Meta never sends us anything.
 
+### 5d. Publish the app
+
+**Needed since 2026.** An unpublished app only receives the dashboard's **Test** webhooks. Real messages,
+even from the app's own admin, are not delivered until the app is published.
+
+1. Sidebar: **App settings > Basic**. Fill in:
+   - **Privacy policy URL** and **User data deletion > Data deletion instructions URL**:
+     `https://calm-warbler-133.convex.site/privacy`
+   - **Category:** Business and pages (or the closest match). Add an app icon if asked.
+   - Save changes.
+2. Sidebar: **Publish** (or the **Development / Live** switch at the top). Publish the app.
+3. If Meta asks for Business Verification or App Review before publishing, stop and note what it asks for;
+   the test number doesn't need advanced access.
+
 ## Part 6: Test it on your phone
 
 Send these to the test number, in order:
