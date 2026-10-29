@@ -53,6 +53,7 @@ export const settle = internalMutation({
         date: entry.date,
         memo: entry.description,
         ref: entry.ref,
+        counterparty: entry.counterparty,
         lines: post(entry),
       });
       count++;

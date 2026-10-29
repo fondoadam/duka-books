@@ -87,6 +87,8 @@ export default defineSchema({
     date: v.string(),
     memo: v.string(),
     ref: v.union(v.string(), v.null()),
+    // Customer or supplier, so debts can be grouped by name. Optional only because rows posted before Oct 30 lack it.
+    counterparty: v.optional(v.union(v.string(), v.null())),
     lines: v.array(v.object({ account, debitCents: v.number(), creditCents: v.number() })),
   })
     .index("by_shop_date", ["shopId", "date"])
