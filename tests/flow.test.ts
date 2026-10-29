@@ -180,3 +180,89 @@ describe("WhatsApp loop", () => {
     expect(await t.run((ctx) => ctx.db.query("proposals").collect())).toHaveLength(3);
   });
 });
+
+describe("Corrections", () => {
+  const tapButton = (t: ReturnType<typeof convexTest>, button: { id: string; title: string }, from = OWNER) =>
+    deliver(t, JSON.stringify({
+      entry: [{ changes: [{ value: { messages: [{ id: `wamid.${++seq}`, from, type: "interactive", interactive: { type: "button_reply", button_reply: button } }] } }] }],
+    }));
+  const say = (t: ReturnType<typeof convexTest>, body: string, from = OWNER) =>
+    deliver(t, JSON.stringify({ entry: [{ changes: [{ value: { messages: [{ id: `wamid.${++seq}`, from, type: "text", text: { body } }] } }] }] }));
+  const button = async (t: ReturnType<typeof convexTest>, prefix: string) =>
+    (await t.query(internal.outbox.recent, { to: OWNER, limit: 10 })).flatMap((m) => m.buttons ?? []).find((b) => b.id.startsWith(prefix))!;
+
+  async function photoThenReject(t: ReturnType<typeof convexTest>) {
+    await deliver(t, webhook({ type: "image", image: { id: "fake-media", mime_type: "image/jpeg" } }));
+    await tapButton(t, await button(t, "reject:"));
+  }
+
+  beforeEach(() => vi.stubEnv("EXTRACT_STUB", "1"));
+
+  it("'Si sahihi' asks for the line to fix", async () => {
+    const t = convexTest(schema, modules);
+    await photoThenReject(t);
+    const reply = await latest(t);
+    expect(reply.body).toContain("mfano: 2 = 450");
+    expect(reply.buttons?.map((b) => b.title)).toEqual(["Ghairi"]);
+    expect((await t.run((ctx) => ctx.db.query("proposals").first()))!.status).toBe("correcting");
+  });
+
+  it("fixing line 2 changes only line 2 and re-proposes the same proposal", async () => {
+    const t = convexTest(schema, modules);
+    await photoThenReject(t);
+    await say(t, "2 = 450");
+    const reply = await latest(t);
+    expect(reply.body).toContain("1. Unga 2kg: KES 540");
+    expect(reply.body).toContain("2. Sukari 1kg: KES 450");
+    const proposals = await t.run((ctx) => ctx.db.query("proposals").collect());
+    expect(proposals).toHaveLength(1);
+    expect(reply.buttons![0].id).toBe(`confirm:${proposals[0]._id}`);
+    const corrections = await t.run((ctx) => ctx.db.query("corrections").collect());
+    expect(corrections).toHaveLength(1);
+    expect(corrections[0].before.amountCents).toBe(36000);
+    expect(corrections[0].after!.amountCents).toBe(45000);
+  });
+
+  it("confirm after correction posts the corrected amount", async () => {
+    const t = convexTest(schema, modules);
+    await photoThenReject(t);
+    await say(t, "2 = 450");
+    await say(t, "futa 1");
+    await tapButton(t, (await latest(t)).buttons!.find((b) => b.id.startsWith("confirm:"))!);
+    expect((await latest(t)).body).toContain("Nimeandika rekodi 1");
+    const journal = await t.run((ctx) => ctx.db.query("journal").collect());
+    expect(journal).toHaveLength(1);
+    expect(journal[0].lines[0]).toEqual({ account: "receivables", debitCents: 45000, creditCents: 0 });
+    const shop = await t.run((ctx) => ctx.db.query("shops").first());
+    expect(shop!.pendingCorrection).toBeNull();
+  });
+
+  it("a correction from another shop is ignored", async () => {
+    const t = convexTest(schema, modules);
+    await photoThenReject(t);
+    await say(t, "2 = 1", "254799999999");
+    const proposal = await t.run((ctx) => ctx.db.query("proposals").first());
+    expect(proposal!.entries[1].amountCents).toBe(36000);
+    expect(await t.run((ctx) => ctx.db.query("corrections").collect())).toHaveLength(0);
+  });
+
+  it("Ghairi cancels, and an unknown line is refused", async () => {
+    const t = convexTest(schema, modules);
+    await photoThenReject(t);
+    await say(t, "5 = 100");
+    expect((await latest(t)).body).toContain("Hakuna mstari 5");
+    await say(t, "ghairi");
+    expect((await latest(t)).body).toContain("nimeghairi");
+    expect((await t.run((ctx) => ctx.db.query("proposals").first()))!.status).toBe("rejected");
+    expect(await t.run((ctx) => ctx.db.query("journal").collect())).toHaveLength(0);
+  });
+
+  it("deleting every line cancels the proposal", async () => {
+    const t = convexTest(schema, modules);
+    await photoThenReject(t);
+    await say(t, "futa 1");
+    await say(t, "futa 1");
+    expect((await latest(t)).body).toContain("Umefuta mistari yote");
+    expect((await t.run((ctx) => ctx.db.query("proposals").first()))!.status).toBe("rejected");
+  });
+});

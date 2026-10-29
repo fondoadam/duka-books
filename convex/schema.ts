@@ -52,6 +52,8 @@ export default defineSchema({
     language: v.union(v.literal("sw"), v.literal("en")),
     // Created by scripts/simulate.ts: replies are logged to the outbox but never sent to Meta.
     simulated: v.optional(v.boolean()),
+    // The proposal the owner is fixing after "Si sahihi"; their next "2 = 450" applies to it.
+    pendingCorrection: v.optional(v.union(v.id("proposals"), v.null())),
   }).index("by_wa_id", ["waId"]),
 
   // Raw WhatsApp messages, deduped by Meta's message id (webhooks retry).
@@ -79,8 +81,17 @@ export default defineSchema({
     inboundId: v.id("inbound"),
     entries: v.array(proposedEntry),
     confidence: v.number(),
-    status: v.union(v.literal("pending"), v.literal("confirmed"), v.literal("rejected")),
+    status: v.union(v.literal("pending"), v.literal("correcting"), v.literal("confirmed"), v.literal("rejected")),
   }).index("by_shop_status", ["shopId", "status"]),
+
+  // Every fix the owner made to a proposed line (after is null for a deleted line). Once the model is live, the
+  // shop's latest fixes go into the extraction prompt as examples.
+  corrections: defineTable({
+    shopId: v.id("shops"),
+    proposalId: v.id("proposals"),
+    before: proposedEntry,
+    after: v.union(proposedEntry, v.null()),
+  }).index("by_shop", ["shopId"]),
 
   // Double-entry journal: every entry's lines sum to zero (debits = credits).
   journal: defineTable({

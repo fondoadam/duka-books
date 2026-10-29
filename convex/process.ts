@@ -1,33 +1,24 @@
 import { v } from "convex/values";
 import { internalAction, type ActionCtx } from "./_generated/server";
+import type { Doc, Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { textModel } from "./lib/ai";
 import { answer, isQuestion } from "./lib/ask";
+import { parseCorrection, type Correction } from "./lib/corrections";
 import { extractFromImage, extractFromText, type Extraction } from "./lib/extract";
 import { kes } from "./lib/money";
 import { parseMpesa } from "./lib/mpesa";
 import { resolvePeriod } from "./lib/periods";
-import type { Doc, Id } from "./_generated/dataModel";
-import { downloadMedia, isDryRun, markRead, sendButtons, sendText } from "./lib/whatsapp";
+import { replier, type Reply } from "./lib/reply";
+import { downloadMedia, isDryRun, markRead } from "./lib/whatsapp";
 
 const nairobiToday = () => new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Nairobi" });
 
-// Logs every reply to the outbox, then sends it (unless WHATSAPP_DRY_RUN=1).
-function replier(ctx: ActionCtx, shop: Doc<"shops">) {
-  const to = shop.waId;
-  const dryRun = isDryRun(shop);
-  return {
-    text: async (body: string) => {
-      await ctx.runMutation(internal.outbox.log, { to, body, buttons: null, dryRun });
-      await sendText(to, body, dryRun);
-    },
-    buttons: async (body: string, buttons: { id: string; title: string }[]) => {
-      await ctx.runMutation(internal.outbox.log, { to, body, buttons, dryRun });
-      await sendButtons(to, body, buttons, dryRun);
-    },
-  };
-}
-type Reply = ReturnType<typeof replier>;
+const HANDLED = "Hii tayari imeshughulikiwa.";
+const CANCELLED = "Sawa, nimeghairi. Sijaandika chochote.";
+const CORRECTION_HELP =
+  "Andika namba ya mstari na kiasi sahihi, mfano: 2 = 450. Au 'futa 2' kuondoa mstari.\n" +
+  "Unaweza pia kuandika '2 deni', '2 mpesa' au '2 cash'.";
 
 export const inbound = internalAction({
   args: { inboundId: v.id("inbound") },
@@ -40,39 +31,23 @@ export const inbound = internalAction({
     await markRead(inbound.waMessageId, isDryRun(shop)).catch(() => {});
 
     try {
+      const today = nairobiToday();
       if (inbound.kind === "button" && inbound.text) {
-        const [action, proposalId] = inbound.text.split(":");
-        const result = await ctx.runMutation(internal.ledger.settle, {
-          proposalId,
-          shopId: shop._id,
-          confirm: action === "confirm",
-        });
-        if (!result) await reply.text("Hii tayari imeshughulikiwa.");
-        else if (!result.confirmed) await reply.text("Sawa, sijaandika. Tuma picha au ujumbe tena ukiwa tayari.");
-        else if (result.count === 0) await reply.text("Rekodi hizi tayari ziko kwenye vitabu. Sijaandika tena.");
-        else await reply.text(`✅ Nimeandika rekodi ${result.count} kwenye vitabu.`);
+        await onButton(ctx, shop, reply, inbound.text);
+      } else if (inbound.kind === "text" && inbound.text) {
+        await onText(ctx, shop, inboundId, reply, inbound.text, today);
+      } else if (inbound.kind === "image" && inbound.mediaId) {
+        // Stubbed extraction skips the download, so the simulator can send fake media ids.
+        const media = process.env.EXTRACT_STUB === "1"
+          ? { bytes: new Uint8Array(), mimeType: "image/jpeg" }
+          : await downloadMedia(inbound.mediaId);
+        const examples = await ctx.runQuery(internal.ledger.recentCorrections, { shopId: shop._id });
+        await propose(ctx, shop._id, inboundId, reply, await extractFromImage(media.bytes, media.mimeType, today, examples));
+      } else if (inbound.kind === "audio") {
+        // TODO(day 2): transcribe Swahili/Sheng voice notes, then extractFromText.
+        await reply.text("Sauti bado haijawezeshwa. Tafadhali tuma picha au ujumbe wa maandishi.");
       } else {
-        let extraction: Extraction | null = null;
-        const today = nairobiToday();
-        if (inbound.kind === "image" && inbound.mediaId) {
-          // Stubbed extraction skips the download, so the simulator can send fake media ids.
-          const media = process.env.EXTRACT_STUB === "1"
-            ? { bytes: new Uint8Array(), mimeType: "image/jpeg" }
-            : await downloadMedia(inbound.mediaId);
-          extraction = await extractFromImage(media.bytes, media.mimeType, today);
-        } else if (inbound.kind === "text" && inbound.text) {
-          const mpesa = parseMpesa(inbound.text, today);
-          if (mpesa) extraction = mpesa;
-          else if (isQuestion(inbound.text)) await reply.text(await ask(ctx, shop._id, inbound.text, today));
-          else extraction = await extractFromText(inbound.text, today);
-        } else if (inbound.kind === "audio") {
-          // TODO(day 2): transcribe Swahili/Sheng voice notes, then extractFromText.
-          await reply.text("Sauti bado haijawezeshwa. Tafadhali tuma picha au ujumbe wa maandishi.");
-        } else {
-          await reply.text("Tuma picha ya daftari au risiti, au ujumbe wa M-Pesa.");
-        }
-
-        if (extraction) await propose(ctx, shop._id, inboundId, reply, extraction);
+        await reply.text("Tuma picha ya daftari au risiti, au ujumbe wa M-Pesa.");
       }
       await ctx.runMutation(internal.inbound.setStatus, { inboundId, status: "processed", error: null });
     } catch (err) {
@@ -83,6 +58,56 @@ export const inbound = internalAction({
     }
   },
 });
+
+// Button ids are "<action>:<proposalId>": confirm, reject ("Si sahihi" starts a correction) or cancel ("Ghairi").
+async function onButton(ctx: ActionCtx, shop: Doc<"shops">, reply: Reply, payload: string) {
+  const [action, proposalId] = payload.split(":");
+  const shopId = shop._id;
+  if (action === "reject") {
+    const id = await ctx.runMutation(internal.ledger.startCorrection, { proposalId, shopId });
+    if (!id) return reply.text(HANDLED);
+    return reply.buttons(CORRECTION_HELP, [{ id: `cancel:${id}`, title: "Ghairi" }]);
+  }
+  if (action === "cancel") {
+    return reply.text((await ctx.runMutation(internal.ledger.cancel, { shopId, proposalId })) ? CANCELLED : HANDLED);
+  }
+  const result = await ctx.runMutation(internal.ledger.settle, { proposalId, shopId, confirm: action === "confirm" });
+  if (!result) await reply.text(HANDLED);
+  else if (!result.confirmed) await reply.text(CANCELLED);
+  else if (result.count === 0) await reply.text("Rekodi hizi tayari ziko kwenye vitabu. Sijaandika tena.");
+  else await reply.text(`✅ Nimeandika rekodi ${result.count} kwenye vitabu.`);
+}
+
+async function onText(ctx: ActionCtx, shop: Doc<"shops">, inboundId: Id<"inbound">, reply: Reply, text: string, today: string) {
+  const correcting = !!shop.pendingCorrection;
+  if (correcting && /^\s*ghairi\s*$/i.test(text)) {
+    return reply.text((await ctx.runMutation(internal.ledger.cancel, { shopId: shop._id })) ? CANCELLED : HANDLED);
+  }
+  const fix = correcting ? parseCorrection(text) : null;
+  if (fix) return correct(ctx, shop._id, reply, fix);
+
+  const mpesa = parseMpesa(text, today);
+  if (mpesa) return propose(ctx, shop._id, inboundId, reply, mpesa);
+  if (isQuestion(text)) return reply.text(await ask(ctx, shop._id, text, today));
+  if (correcting) return reply.text(`Sijaelewa marekebisho hayo.\n${CORRECTION_HELP}\nAu andika 'Ghairi'.`);
+  const examples = await ctx.runQuery(internal.ledger.recentCorrections, { shopId: shop._id });
+  return propose(ctx, shop._id, inboundId, reply, await extractFromText(text, today, examples));
+}
+
+async function correct(ctx: ActionCtx, shopId: Id<"shops">, reply: Reply, fix: Correction) {
+  const result = await ctx.runMutation(internal.ledger.correct, { shopId, fix });
+  if (result.status === "none") return reply.text(HANDLED);
+  if (result.status === "no_line") return reply.text(`Hakuna mstari ${fix.line}. Rekodi hii ina mistari ${result.count}.`);
+  if (result.status === "emptied") return reply.text("Umefuta mistari yote, kwa hiyo sijaandika chochote.");
+  const body = [`Nimerekebisha. Rekodi ${result.entries.length}:`, ...lines(result.entries), "", "Andika marekebisho mengine, au bonyeza Sawa."];
+  await reply.buttons(body.join("\n").slice(0, 1024), [
+    { id: `confirm:${result.proposalId}`, title: "Sawa, andika" },
+    { id: `cancel:${result.proposalId}`, title: "Ghairi" },
+  ]);
+}
+
+const lines = (entries: { description: string; amountCents: number; kind: string }[]) =>
+  entries.map((e, i) => `${i + 1}. ${e.description}: ${kes(e.amountCents)} (${e.kind})`);
 
 // The agent needs a working model; until the key arrives (EXTRACT_STUB=1 or no key) the keyword router answers.
 function ask(ctx: ActionCtx, shopId: Id<"shops">, question: string, today: string) {
@@ -131,10 +156,9 @@ async function propose(
     return;
   }
 
-  const lines = entries.map((e, i) => `${i + 1}. ${e.description}: ${kes(e.amountCents)} (${e.kind})`);
   const body = [
     `Nimepata rekodi ${entries.length}:`,
-    ...lines,
+    ...lines(entries),
     dupeNote && `\n${dupeNote}`,
     extraction.notes ? `\n⚠️ ${extraction.notes}` : "",
   ]
