@@ -321,8 +321,8 @@ the key): the questions in `plan.md`, real answer keys, prompt tuning.
 - [ ] `scripts/seed-week.ts`: replays that week through `simulate` so the "ask" and P&L moments have real data
       even if live sends are slow.
 - [ ] Run the full demo script on the phone twice. Fix whatever breaks (log failures from `inbound.status = failed`).
-- [ ] Record the 5-minute video (story in `plan.md`): photo → proposal → confirm → SAM receipts → voice note →
-      "faida wiki hii?" → evening summary → P&L PDF. Screen-record the phone; caption the Swahili in English.
+- [ ] Record the 3-minute video (rules; beats in `plan.md`): photo → proposal → confirm → SAM receipts → voice note →
+      "faida wiki hii?" → P&L PDF → closing card on what was built during the event. Screen-record the phone; caption the Swahili in English.
 
 **Done when:** the video file is exported and watched once end to end.
 

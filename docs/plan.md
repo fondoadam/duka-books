@@ -18,15 +18,47 @@ Judging of submitted projects:
 - Indie track: solo or a team of up to 4. Prizes: $150k / $100k / $75k / $50k / $25k. Bonus prizes of up to
   $50k in total, which may include a community vote and a most-viral award.
 - The submission must be **your own original work**. Open source is allowed if its licences are followed.
-  The rules don't ban code written before the event, but this repo starts fresh on Oct 27 to be safe.
 - Credits: $150 Meta Model API credit, which must be **claimed through the form in the Oct 26 email**.
   Using it needs a card on file, so set a Spend Limit on the Billing page. Claim by Nov 4, 9 PM ET.
 - Models named: Muse Spark, Muse Wonder, Muse Image, SAM 3 / 3.1, Glimmer, Meta open weights, Muse Code.
 
-## Demo story (5 min, all in WhatsApp)
+## Official rules (pasted Oct 29)
+
+Breaking these can disqualify the project:
+
+- **New work only.** Everything presented must be built during the event, Oct 26 to Nov 4. This repo's first
+  commit is Oct 27, 06:17 Nairobi.
+- **Identify your contributions.** The demo must show only what we built during the event, and judges must be able
+  to tell what's new. If they can't, the project is disqualified. The README's "What was built during the
+  hackathon" section and the video's closing card both say it.
+- **Public repo** at submission time.
+- **Teams:** max 4, solo allowed, one track only (Indie), one person submits.
+- **Demo video: 3 minutes**, required, one of the main things judges score.
+- **Banned:** anything breaking legal, ethical or platform policies; code, data or assets we don't have rights to
+  (so: the shop owner's written consent for their records and footage). Generic projects are out, including
+  **"simple image analyzers"**. Never pitch this as "reads receipts": it is a bookkeeper (double-entry ledger,
+  confirm loop, agent over the books, P&L) and the photo is only one input.
+- **Theme:** Build for Your World (Meta's models in a domain we know, solving a real problem). Llama 4 open weights
+  count as Meta models, so the Llama fallback stays inside the rules.
+- **Submit by Wed Nov 4, 9:00 PM ET** with the public repo, a working demo video link and every team member added.
+- Waiver: 18+, and no Meta or Cerebral Valley staff, contractors, government-affiliated people or their households.
+
+## Demo story (3 min, all in WhatsApp)
 
 A shopkeeper's real week (ledger photos, receipts, M-Pesa SMS, one voice note) turns into confirmed books,
-an evening summary, an answer to "nilipata faida ngapi wiki hii?", and a lender-ready P&L.
+an answer to "nilipata faida ngapi wiki hii?", and a lender-ready P&L.
+
+| Time | Beat |
+| --- | --- |
+| 0:00–0:15 | The problem: an exercise book and M-Pesa SMS, no records, so credit means Fuliza. |
+| 0:15–0:55 | Ledger photo → Swahili proposal → *Sawa, andika* → *Si sahihi* `2 = 450` fix. |
+| 0:55–1:25 | Pile of receipts captioned *risiti* → SAM numbered photo → one entry per receipt. |
+| 1:25–1:45 | Forwarded M-Pesa and Fuliza SMS; the same SMS again is refused. |
+| 1:45–2:10 | Voice note (only if ASR is live), then "faida wiki hii?" answered from the books. |
+| 2:10–2:35 | Monthly P&L PDF arrives in WhatsApp. |
+| 2:35–3:00 | Closing card: built Oct 27–Nov 4, which Meta models ran live, the double-entry journal behind it. |
+
+Cut the voice beat before anything else if it runs long. The evening summary only gets a one-second glimpse.
 
 ## Status
 

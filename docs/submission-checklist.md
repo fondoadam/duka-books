@@ -18,12 +18,15 @@ https://cerebralvalley.ai/e/meta-ai-developer-hackathon/hackathon/submit
 - [ ] Owner's consent to film and to use their records.
 - [ ] A week of real records sent from the phone (ledger photos, receipts, M-Pesa/Fuliza SMS, 2 voice notes).
 - [ ] Demo script run twice on the phone. Check `inbound` rows with `status = failed` and fix anything that broke.
-- [ ] 5-minute video: photo → proposal → confirm → *Si sahihi* fix → SAM receipts (numbered photo) → voice
-      note → "faida wiki hii?" → evening summary → P&L PDF. English captions over the Swahili. Watch it once end to end.
+- [ ] **3-minute** video (rules; beats in `plan.md`): photo → proposal → confirm → *Si sahihi* fix → SAM receipts (numbered photo) → voice
+      note → "faida wiki hii?" → P&L PDF. English captions over the Swahili. Close on a card saying what was built during the event and which
+      Meta models ran live. Pitch it as a bookkeeper, never as "reads receipts" (simple image analyzers are banned).
+      Check the length (≤ 3:00), then watch it once end to end.
 - [ ] Upload (YouTube unlisted or as the form asks) and note the link here.
 
 ## Repo
 
+- [ ] README "What was built during the hackathon" section still true (rules: judges must tell what's new, or DQ).
 - [ ] README status table updated to what is actually live on submit day (be honest about stubs).
 - [ ] No secrets in git: `git log -p | grep -iE "EAA|hf_|sk-|secret="` comes back empty. `.env.local` stays ignored.
 - [ ] `pnpm typecheck && pnpm test` green on `main`.
@@ -38,4 +41,5 @@ https://cerebralvalley.ai/e/meta-ai-developer-hackathon/hackathon/submit
 - [ ] Track: indie. Theme: Build for Your World.
 - [ ] Which Meta tools were used: Muse Spark (vision, tools agent), SAM 3, Omnilingual ASR / Llama fallback. Name exactly what was live.
 - [ ] Claim the $150 Meta credit through the Oct 26 email form by Nov 4, 9 PM ET (even if unused).
+- [ ] Every team member added (solo: just you).
 - [ ] Submit, then screenshot the confirmation.

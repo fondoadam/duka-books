@@ -22,6 +22,24 @@ the owner can take to a SACCO or bank.
 | *"faida wiki hii?"*, *"nani ananidai?"*, *"deni la Fuliza?"* | Profit this week, who owes me, what I owe on Fuliza. Answers come from tool calls over the ledger; the model never does the arithmetic |
 | *ripoti*, *ripoti ya mwezi* / *P&L*, *acha ripoti* | Today's summary now; the monthly P&L PDF as a WhatsApp document; turn off the 19:00 evening summary |
 
+## What was built during the hackathon
+
+Everything in this repository was written during the event (Oct 26 to Nov 4, 2026), starting from an empty repo:
+the first commit is Oct 27, and `git log` shows the rest. That covers the WhatsApp webhook and outbox, the M-Pesa and
+Fuliza parsers, the extraction prompts and schemas, the confirm/correct loop, the double-entry ledger, the ask agent
+and its tools, the summaries and P&L PDF, the receipt cropping and numbering, the audio decoding, the tests and the
+eval.
+
+We didn't build these and use them as they are:
+
+- **Meta's models**: Muse Spark (Meta Model API), SAM 3 (`facebook/sam3`, under Meta's SAM licence), Llama 4 open
+  weights for the fallback.
+- **SAM 3 hosting**: the public Hugging Face Space
+  [`prithivMLmods/SAM3-Demo`](https://huggingface.co/spaces/prithivMLmods/SAM3-Demo) (Apache-2.0), called through
+  its Gradio API.
+- **Platform and libraries**: the WhatsApp Cloud API, Convex, the Vercel AI SDK, Zod, pdf-lib, jpeg-js, fast-png and
+  ogg-opus-decoder, each under its own licence.
+
 ## Meta AI, and where it runs
 
 | Model | Job | Code | Status (Oct 29) |
