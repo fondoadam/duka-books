@@ -94,6 +94,23 @@ describe("WhatsApp loop", () => {
     expect(await t.run((ctx) => ctx.db.query("journal").collect())).toHaveLength(1);
   });
 
+  it("books a forwarded Fuliza SMS as a loan plus its fee", async () => {
+    const t = convexTest(schema, modules);
+    await deliver(t, webhook({ type: "text", text: { body: "UJT5R09EGR Confirmed. Fuliza M-PESA amount is Ksh 50.00. Access Fee charged Ksh 0.50. Total Fuliza M-PESA outstanding amount is Ksh496.28 due on 26/11/26. To check daily charges, Dial *334#OK Select Query Charges" } }));
+    const proposal = await latest(t);
+    expect(proposal.body).toContain("Mkopo wa Fuliza: KES 50 (loan_received)");
+    expect(proposal.body).toContain("Ada ya Fuliza: KES 0.50 (loan_fee)");
+    expect(proposal.body).toContain("Deni la Fuliza sasa ni KES 496.28");
+    await deliver(t, webhook({ type: "interactive", interactive: { type: "button_reply", button_reply: proposal.buttons![0] } }));
+    const lines = (await t.run((ctx) => ctx.db.query("journal").collect())).flatMap((j) => j.lines);
+    expect(lines).toEqual([
+      { account: "mpesa", debitCents: 5000, creditCents: 0 },
+      { account: "loans", debitCents: 0, creditCents: 5000 },
+      { account: "expenses", debitCents: 50, creditCents: 0 },
+      { account: "loans", debitCents: 0, creditCents: 50 },
+    ]);
+  });
+
   it("ignores a webhook retry with the same message id", async () => {
     const t = convexTest(schema, modules);
     const body = webhook({ type: "text", text: { body: SMS } });

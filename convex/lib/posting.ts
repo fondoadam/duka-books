@@ -20,6 +20,12 @@ export function post(entry: Entry): { account: Account; debitCents: number; cred
         return [money, "receivables"];
       case "payment_made":
         return ["payables", money];
+      case "loan_received":
+        return [money, "loans"];
+      case "loan_repaid":
+        return ["loans", money];
+      case "loan_fee":
+        return ["expenses", "loans"]; // added to what is owed, not taken from the wallet
     }
   })();
   return [

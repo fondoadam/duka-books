@@ -7,6 +7,10 @@ export const entryKind = v.union(
   v.literal("expense"),
   v.literal("payment_received"),
   v.literal("payment_made"),
+  // Fuliza, Safaricom's M-Pesa overdraft: borrowing and repaying are not sales or spending; the access fee is.
+  v.literal("loan_received"),
+  v.literal("loan_repaid"),
+  v.literal("loan_fee"),
 );
 
 export const paymentMethod = v.union(
@@ -34,6 +38,7 @@ export const account = v.union(
   v.literal("mpesa"),
   v.literal("receivables"),
   v.literal("payables"),
+  v.literal("loans"),
   v.literal("inventory"),
   v.literal("sales"),
   v.literal("expenses"),

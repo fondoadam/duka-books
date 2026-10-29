@@ -3,11 +3,11 @@ import { internalAction, type ActionCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { extractFromImage, extractFromText, type Extraction } from "./lib/extract";
+import { kes } from "./lib/money";
 import { parseMpesa } from "./lib/mpesa";
 import { downloadMedia, markRead, sendButtons, sendText } from "./lib/whatsapp";
 
 const nairobiToday = () => new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Nairobi" });
-const kes = (cents: number) => `KES ${(cents / 100).toLocaleString("en-KE")}`;
 
 // Logs every reply to the outbox, then sends it (unless WHATSAPP_DRY_RUN=1).
 function replier(ctx: ActionCtx, to: string) {
