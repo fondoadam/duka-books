@@ -28,7 +28,7 @@ phone loop works today.
 | 0 | Lock in + model seam | No | Technical depth | [x] |
 | 1 | WhatsApp live on the phone | No | Demo | [ ] |
 | 2 | Ask the books (agent tools) | No (tools) / Yes (agent) | Meta tooling, Impact | [x] |
-| 3 | Corrections ("Si sahihi") | No | Technical depth, Demo | [ ] |
+| 3 | Corrections ("Si sahihi") | No | Technical depth, Demo | [x] |
 | 4 | Summaries, debtors, P&L PDF | No | Impact | [ ] |
 | 5 | Voice notes | Depends on ASR path | Meta tooling, Impact | [ ] |
 | 6 | SAM 3.1 receipt splitting | No (hosted SAM) | Meta tooling | [ ] |
@@ -136,17 +136,22 @@ returns the right figure.
 **Files:** `convex/ledger.ts`, `convex/process.ts`, `convex/schema.ts`, create `convex/lib/corrections.ts`,
 `tests/corrections.test.ts`, extend `tests/flow.test.ts`
 
-- [ ] "Si sahihi" → reply: *"Andika namba ya mstari na kiasi sahihi, mfano: 2 = 450. Au 'futa 2' kuondoa mstari."*
+- [x] "Si sahihi" → reply: *"Andika namba ya mstari na kiasi sahihi, mfano: 2 = 450. Au 'futa 2' kuondoa mstari."*
       Proposal status becomes `correcting`; shop remembers `pendingCorrection: Id<"proposals"> | null`.
-- [ ] `parseCorrection(text): { line: number; amountKes?: number; kind?: EntryKind; delete?: true } | null`,
+- [x] `parseCorrection(text): { line: number; amountKes?: number; kind?: EntryKind; delete?: true } | null`,
       exact rules for `2 = 450`, `2 450`, `futa 2`, `2 deni`, `2 mpesa`. Anything else → model fallback later (Phase 7).
-- [ ] Apply the fix, re-send the proposal with buttons (same id). "Ghairi" cancels.
-- [ ] Save each fix in a new `corrections` table `{ shopId, before: proposedEntry, after: proposedEntry }`;
+- [x] Apply the fix, re-send the proposal with buttons (same id). "Ghairi" cancels.
+- [x] Save each fix in a new `corrections` table `{ shopId, before: proposedEntry, after: proposedEntry }`;
       `extract.ts` adds the shop's last 5 as few-shot examples (used once the key works).
-- [ ] Tests: parse cases above, "fixing line 2 changes only line 2 and re-proposes",
+- [x] Tests: parse cases above, "fixing line 2 changes only line 2 and re-proposes",
       "a correction from another shop is ignored", "confirm after correction posts the corrected amount".
 
-**Done when:** simulate photo → reject → `2 = 450` → confirm posts 450.
+Oct 29: the proposal stays open while the owner fixes it (buttons become "Sawa, andika" / "Ghairi"), so several
+fixes can follow one "Si sahihi". Free-text fixes the rules don't match get a hint; the model fallback is Phase 7.
+Simulator shops (signed `duka_sim` flag) are always dry-run, so `pnpm simulate` is safe on the live deployment.
+
+**Done when:** simulate photo → reject → `2 = 450` → confirm posts 450. ✅ Oct 29 on `calm-warbler-133`
+(SIM_FROM=254700000901): journal shows Sukari 1kg KES 450 to receivables.
 
 ---
 
