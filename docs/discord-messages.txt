@@ -1,0 +1,24 @@
+=====================================================================
+1. INTRO  (post in the introductions channel)
+=====================================================================
+
+👋 Hi all, I'm Adam, a solo full-stack developer from Nairobi, Kenya, in the Indie track. Really grateful to be part of this hackathon, and thanks to the organisers and Meta for putting it together!
+
+I'm building **Duka Books**, a WhatsApp bookkeeper for Kenya's small shops ("dukas"). The owner sends a photo of their handwritten ledger, receipts, M-Pesa messages or a Swahili voice note. Muse Spark and SAM 3.1 turn those into proper books, and the owner confirms each entry with one tap. At month end they get a profit-and-loss statement they can take to a lender.
+
+Stack: Convex, the WhatsApp Cloud API and the Meta Model API. By day I build BizStudio, a business app for Kenyan SMEs.
+
+Happy to swap notes with anyone on WhatsApp bots, vision extraction from messy handwriting, or Swahili speech. I'd love to stay in touch after the hackathon too, so let's connect:
+
+🔗 LinkedIn: https://www.linkedin.com/in/adam-fondo-50b2562a8
+🐦 X: https://x.com/FondoAdam
+💻 GitHub: https://github.com/fondoadam
+
+Good luck everyone, and happy building! 🇰🇪
+
+
+=====================================================================
+2. CREDITS QUESTION  (post in a help / credits / support channel)
+=====================================================================
+
+Hi! I've applied for the $150 Meta Model API credits, but I don't have a credit card (common in Kenya, where most payments go through M-Pesa). Can a prepaid or virtual Visa card such as M-Pesa GlobalPay be used to activate billing, or is there another option for participants without a card? Thanks!

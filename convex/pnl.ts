@@ -8,7 +8,9 @@ import type { Reply } from "./lib/reply";
 
 // Builds the P&L PDF for a month, stores it in Convex file storage and sends it as a WhatsApp document.
 export async function sendPnl(ctx: ActionCtx, shop: Doc<"shops">, reply: Reply, period: Period, today: string) {
-  const range = resolvePeriod(period, today);
+  // This month runs to today: the statement must not claim days that haven't happened.
+  const full = resolvePeriod(period, today);
+  const range = { from: full.from, to: full.to > today ? today : full.to };
   const [totals, debtors, loans] = await Promise.all([
     ctx.runQuery(internal.reports.totals, { shopId: shop._id, ...range }),
     ctx.runQuery(internal.reports.debtors, { shopId: shop._id }),

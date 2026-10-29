@@ -29,7 +29,7 @@ phone loop works today.
 | 1 | WhatsApp live on the phone | No | Demo | [ ] |
 | 2 | Ask the books (agent tools) | No (tools) / Yes (agent) | Meta tooling, Impact | [x] |
 | 3 | Corrections ("Si sahihi") | No | Technical depth, Demo | [x] |
-| 4 | Summaries, debtors, P&L PDF | No | Impact | [ ] |
+| 4 | Summaries, debtors, P&L PDF | No | Impact | [x] |
 | 5 | Voice notes | Depends on ASR path | Meta tooling, Impact | [ ] |
 | 6 | SAM 3.1 receipt splitting | No (hosted SAM) | Meta tooling | [ ] |
 | 7 | Key day: Muse Spark live | **Yes** | Meta tooling, Demo | [ ] |
@@ -162,20 +162,26 @@ Simulator shops (signed `duka_sim` flag) are always dry-run, so `pnpm simulate` 
 **Files:** create `convex/crons.ts`, `convex/summaries.ts`, `convex/pnl.ts` (`"use node"`), modify
 `convex/lib/whatsapp.ts`, `convex/schema.ts`; tests `tests/summaries.test.ts`, `tests/pnl.test.ts`
 
-- [ ] Evening summary at 19:00 Nairobi (16:00 UTC cron): sales, spend, profit today, top 3 debtors, one line
+- [x] Evening summary at 19:00 Nairobi (16:00 UTC cron): sales, spend, profit today, top 3 debtors, one line
       vs yesterday. Only for shops with journal activity today. `shops.summaryOptOut` and "acha ripoti" to stop.
       WhatsApp only allows free-form text within 24h of the owner's last message: skip shops outside it
       (store `lastInboundAt` on shops).
-- [ ] On demand: "ripoti" sends the same summary now (this is the cut-down version if crons slip).
-- [ ] "Nani ananidai?" → debtors list (the Phase 2 router already routes it; add the template).
-- [ ] Monthly P&L PDF with `pdf-lib`: shop name, period, sales, cost of goods (purchases), expenses, net profit,
+- [x] On demand: "ripoti" sends the same summary now (this is the cut-down version if crons slip).
+- [x] "Nani ananidai?" → debtors list (the Phase 2 router already routes it; add the template).
+- [x] Monthly P&L PDF with `pdf-lib`: shop name, period, sales, cost of goods (purchases), expenses, net profit,
       cash vs M-Pesa, list of debtors, footer "Imeandaliwa na Duka Books kutoka rekodi zilizothibitishwa na mmiliki".
       Store in Convex file storage, send with `sendDocument(to, link, filename, caption)`.
       Trigger: "P&L", "ripoti ya mwezi", "taarifa ya mkopo".
-- [ ] Tests: "summary totals match reports.totals", "no summary for a shop with no activity or outside 24h",
+- [x] Tests: "summary totals match reports.totals", "no summary for a shop with no activity or outside 24h",
       "pnl builds a PDF whose text contains the net profit" (parse with `pdf-lib` or check bytes start `%PDF`).
 
-**Done when:** `pnpm simulate "ripoti ya mwezi"` logs a document reply with a working storage link.
+Oct 29: the summary and the P&L both carry the Fuliza balance. `pdf-lib` runs in the default Convex runtime, so
+`pnl.ts` needs no `"use node"`. The P&L labels are bilingual (Swahili / English) for a loan officer, and "this
+month" ends today. The cron is live on `calm-warbler-133`: a real shop that booked something today and wrote within
+24h gets the summary at 19:00.
+
+**Done when:** `pnpm simulate "ripoti ya mwezi"` logs a document reply with a working storage link. ✅ Oct 29: the
+link returned `200 application/pdf`, starting `%PDF-1.7`, and renders as a one-page statement.
 
 ---
 
