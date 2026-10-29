@@ -4,7 +4,7 @@ import type { Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { extractFromImage, extractFromText, type Extraction } from "./lib/extract";
 import { parseMpesa } from "./lib/mpesa";
-import { downloadMedia, sendButtons, sendText } from "./lib/whatsapp";
+import { downloadMedia, markRead, sendButtons, sendText } from "./lib/whatsapp";
 
 const nairobiToday = () => new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Nairobi" });
 const kes = (cents: number) => `KES ${(cents / 100).toLocaleString("en-KE")}`;
@@ -32,6 +32,8 @@ export const inbound = internalAction({
     const { inbound, shop } = found;
     const to = shop.waId;
     const reply = replier(ctx, to);
+    // Cosmetic: never let a failed read receipt stop the reply.
+    await markRead(inbound.waMessageId).catch(() => {});
 
     try {
       if (inbound.kind === "button" && inbound.text) {

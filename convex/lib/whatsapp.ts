@@ -34,6 +34,11 @@ export function sendButtons(to: string, body: string, buttons: { id: string; tit
   });
 }
 
+// Blue ticks plus "typing…" on the owner's phone while we work. The indicator clears on our reply (or after 25 s).
+export function markRead(messageId: string) {
+  return send({ status: "read", message_id: messageId, typing_indicator: { type: "text" } });
+}
+
 export async function downloadMedia(mediaId: string) {
   const meta = await fetch(`${GRAPH}/${mediaId}`, { headers: authHeaders() });
   if (!meta.ok) throw new Error(`Media lookup failed: ${meta.status}`);
