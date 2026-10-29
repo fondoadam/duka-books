@@ -39,6 +39,8 @@ Work now runs phase by phase from [roadmap.md](roadmap.md) ("implement phase N")
 - [x] Dry-run outbox + `pnpm simulate`; 34 tests incl. the full signed-webhook -> confirm -> journal loop
 - [ ] Muse Spark verified against real ledger photos (`pnpm smoke:extract`)
 - [x] WhatsApp test number connected end to end (Oct 29)
+- [x] Oct 29: corrections, summaries + cron + P&L PDF, voice (stub ASR), SAM 3 receipt splitting (Space client +
+      stub), one model switch, sum check, `pnpm eval`, README. 158 tests. Status per phase in [roadmap.md](roadmap.md).
 
 ## Days
 

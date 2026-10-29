@@ -34,7 +34,7 @@ phone loop works today.
 | 6 | SAM 3.1 receipt splitting | No (hosted SAM) | Meta tooling | [x] stub + SAM 3 Space client (token: your step) |
 | 7 | Key day: Muse Spark live | **Yes** | Meta tooling, Demo | [ ] prep done; needs key |
 | 8 | Real shop week + demo video | Yes | Demo, Impact | [ ] |
-| 9 | Write-up and submit | No | All | [ ] |
+| 9 | Write-up and submit | No | All | [ ] README done; submit is yours |
 
 Suggested calendar: Oct 29 → 0, 1 · Oct 30 → 2, 3 · Oct 31 → 4, 5 · Nov 1 → 6 · Nov 2 → 8 · Nov 3 → 9.
 Phase 7 jumps the queue the moment the key works.
@@ -320,11 +320,16 @@ the key): the questions in `plan.md`, real answer keys, prompt tuning.
 
 ## Phase 9: Write-up and submit
 
-- [ ] README: what it does, which Meta models and where (Muse Spark vision, SAM 3.1, ASR, agent tools), how the
+- [x] README: what it does, which Meta models and where (Muse Spark vision, SAM 3.1, ASR, agent tools), how the
       ledger stays correct (signed webhook, dedupe, owner confirms, double entry, numbers only from tools).
-- [ ] Architecture diagram (Mermaid in README).
-- [ ] Impact paragraph: number of dukas/MSEs in Kenya (cite the source), and why a confirmed P&L matters for credit.
+- [x] Architecture diagram (Mermaid in README).
+- [x] Impact paragraph: number of dukas/MSEs in Kenya (cite the source), and why a confirmed P&L matters for credit.
 - [ ] Fill the submit form at the link in `plan.md`: repo, video, write-up. Submit by Nov 3; Nov 4 is buffer.
+
+---
+
+Oct 29: README rewritten (models and status table, the eight correctness rules, Mermaid architecture, KNBS impact
+figures with sources). Everything left to do is yours and is listed in [submission-checklist.md](submission-checklist.md).
 
 ---
 
