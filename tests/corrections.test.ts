@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { MockLanguageModelV4 } from "ai/test";
 import type { Infer } from "convex/values";
 import type { proposedEntry } from "../convex/schema";
-import { applyCorrection, parseCorrection } from "../convex/lib/corrections";
+import { applyCorrection, interpretCorrection, parseCorrection } from "../convex/lib/corrections";
+import { spokenAmount } from "../convex/lib/spoken";
 import { fewShot } from "../convex/lib/extract";
 
 type Entry = Infer<typeof proposedEntry>;
@@ -61,5 +63,31 @@ describe("fewShot", () => {
     ]);
     expect(text).toContain(`You read "Sukari" KES 360 sale cash; the owner corrected it to "Sukari" KES 450 sale credit.`);
     expect(text).toContain(`"Jumla" KES 100 sale cash; the owner deleted it`);
+  });
+});
+
+describe("interpretCorrection", () => {
+  const usage = { inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 }, outputTokens: { total: 1, text: 1, reasoning: 0 } };
+  const said = (json: object) =>
+    new MockLanguageModelV4({ doGenerate: { content: [{ type: "text", text: JSON.stringify(json) }], finishReason: { unified: "stop", raw: undefined }, usage, warnings: [] } });
+  const entries = [entry({ description: "Unga 2kg", amountCents: 54000 }), entry({ description: "Sukari", amountCents: 36000, method: "mpesa" })];
+
+  it("trusts the exact reading of a spelled-out amount over the model's", async () => {
+    const fix = await interpretCorrection("sukari ilikuwa mia nne hamsini", entries, said({ line: 2, amountKes: 440, method: null, kind: null, delete: false }));
+    expect(fix).toEqual({ line: 2, amountKes: 450 });
+  });
+
+  it("keeps the model's amount when the message has no spelled-out number", async () => {
+    const fix = await interpretCorrection("sukari ilikuwa 450", entries, said({ line: 2, amountKes: 450, method: null, kind: null, delete: false }));
+    expect(fix).toEqual({ line: 2, amountKes: 450 });
+  });
+});
+
+describe("spokenAmount", () => {
+  it("reads one spelled-out amount, and refuses when there are none or two", () => {
+    expect(spokenAmount("sukari ilikuwa mia nne hamsini")).toBe(450);
+    expect(spokenAmount("unga ni elfu moja na mia mbili")).toBe(1200);
+    expect(spokenAmount("sukari ilikuwa 450")).toBeNull();
+    expect(spokenAmount("mia moja si mia mbili")).toBeNull();
   });
 });

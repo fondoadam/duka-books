@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MockLanguageModelV4 } from "ai/test";
 import { interpretCorrection } from "../convex/lib/corrections";
-import { extractFromImage, finish, sumCheck } from "../convex/lib/extract";
+import { extractFromImage, extractFromText, finish, sumCheck } from "../convex/lib/extract";
 
 const usage = { inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 }, outputTokens: { total: 1, text: 1, reasoning: 0 } };
 const replying = (json: object) =>
@@ -82,5 +82,32 @@ describe("Meta Model API request", () => {
     // Params Meta rejects with HTTP 400 are never sent.
     for (const k of ["stop", "seed", "n", "logprobs", "frequency_penalty", "presence_penalty", "temperature"]) expect(body[k]).toBeUndefined();
     expect(body.messages[1].content[1]).toEqual({ type: "image_url", image_url: { url: "data:image/jpeg;base64,/9j/" } });
+  });
+});
+
+describe("extractFromText on a small model", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+
+  const reading = (amounts: number[]) => {
+    vi.stubEnv("MODEL_PROVIDER", "open");
+    vi.stubEnv("MODEL_SPACE", "off");
+    vi.stubEnv("MODEL_FALLBACK_URL", "https://mac.example/v1");
+    const content = JSON.stringify({ entries: amounts.map((a) => ({ ...line(a), description: "sukari" })), confidence: 0.9, notes: null, writtenTotalKes: null });
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({ choices: [{ message: { content } }] }));
+  };
+
+  it("takes a one-line amount spelled in words from the exact reader, not the model", async () => {
+    reading([4500]);
+    expect((await extractFromText("sukari ilikuwa mia nne hamsini", "2026-10-29")).entries[0].amountKes).toBe(450);
+  });
+
+  it("leaves the model's amounts alone when digits are written or there are several lines", async () => {
+    reading([360]);
+    expect((await extractFromText("unga mbili kwa 360", "2026-10-29")).entries[0].amountKes).toBe(360);
+    reading([300, 200]);
+    expect((await extractFromText("unga mia tatu, sukari mia mbili", "2026-10-29")).entries.map((e) => e.amountKes)).toEqual([300, 200]);
   });
 });

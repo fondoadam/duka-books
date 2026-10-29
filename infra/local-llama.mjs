@@ -1,11 +1,13 @@
-// Llama 3.2 Vision on our own Mac as the fallback model (MODEL_PROVIDER=open, see convex/lib/space.ts).
+// Llama 3.1 8B on our own Mac as the text fallback model (MODEL_PROVIDER=open, see convex/lib/space.ts).
 //   pnpm llama:serve
-// Needs `brew install ollama cloudflared`, `brew services start ollama` and `ollama pull llama3.2-vision:11b`.
+// Needs `brew install ollama cloudflared`, `brew services start ollama` and `ollama pull llama3.1:8b`.
 //
 // Ollama has no auth, so it is never exposed itself: a small proxy on 127.0.0.1:11435 checks a bearer token and
 // forwards only POST /v1/chat/completions. A Cloudflare quick tunnel (no account) gives the proxy a public URL,
 // which changes every run, so this script writes it and the token to the Convex env each time it starts.
-// Keep it running (caffeinate stops the Mac sleeping) for as long as the bot should have the fallback.
+// Keep it running (caffeinate stops the Mac sleeping) for as long as the bot should have the fallback. On Adam's Mac
+// mini it runs as the login agent ~/Library/LaunchAgents/com.dukabooks.llama.plist (KeepAlive; log in
+// ~/Library/Logs/duka-books-llama.log). Stop it with `launchctl bootout gui/$(id -u)/com.dukabooks.llama`.
 import { spawn, execFileSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -15,7 +17,7 @@ import { join } from "node:path";
 
 const OLLAMA = process.env.OLLAMA_URL ?? "http://127.0.0.1:11434";
 const PORT = Number(process.env.PROXY_PORT ?? 11435);
-const MODEL = process.env.MODEL_FALLBACK_MODEL ?? "llama3.2-vision:11b";
+const MODEL = process.env.MODEL_FALLBACK_MODEL ?? "llama3.1:8b";
 const tokenFile = join(homedir(), ".duka-books-llama-token");
 if (!existsSync(tokenFile)) writeFileSync(tokenFile, randomBytes(24).toString("hex"), { mode: 0o600 });
 const token = readFileSync(tokenFile, "utf8").trim();
@@ -37,8 +39,8 @@ createServer(async (req, res) => {
   }
 }).listen(PORT, "127.0.0.1", () => console.log(`proxy on 127.0.0.1:${PORT} -> ${OLLAMA}`));
 
-// Load the model now so the first WhatsApp photo doesn't wait for it, and keep it loaded.
-fetch(`${OLLAMA}/api/generate`, { method: "POST", body: JSON.stringify({ model: MODEL, keep_alive: "24h" }) }).catch(() => {});
+// Load the model now so the first message doesn't wait for it. Ollama unloads it when idle; reloading takes seconds.
+fetch(`${OLLAMA}/api/generate`, { method: "POST", body: JSON.stringify({ model: MODEL, keep_alive: "30m" }) }).catch(() => {});
 
 const tunnel = spawn("cloudflared", ["tunnel", "--no-autoupdate", "--url", `http://127.0.0.1:${PORT}`], { stdio: ["ignore", "ignore", "pipe"] });
 let published = false;

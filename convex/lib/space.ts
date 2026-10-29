@@ -2,13 +2,15 @@
 // createOpenAICompatible gets openFetch as its fetch, and each /chat/completions request goes to:
 //   1. Muse Glimmer 30B on a Hugging Face ZeroGPU Space (MODEL_SPACE; MODEL_SPACE=off skips it). Free with
 //      HF_TOKEN, but the free daily GPU quota is a handful of calls, so when it fails we go to
-//   2. MODEL_FALLBACK_URL: any OpenAI-compatible host, e.g. Llama 3.2 Vision in Ollama on our own Mac behind
-//      infra/local-llama.sh (MODEL_FALLBACK_MODEL, MODEL_FALLBACK_KEY).
+//   2. MODEL_FALLBACK_URL: any OpenAI-compatible host, e.g. Llama 3.1 8B in Ollama on our own Mac behind
+//      infra/local-llama.mjs (MODEL_FALLBACK_MODEL, MODEL_FALLBACK_KEY). Text only unless MODEL_FALLBACK_VISION=1:
+//      no Meta vision model fits a 16 GB Mac, so photos are only read by Muse Glimmer.
 //
 // Neither takes tools, and the Space takes no JSON schema either, so both are done in the prompt:
 //   response_format json_schema  the schema is added to the system prompt and the JSON is cut out of the reply
 //   tools                        the tools are listed in the system prompt; a reply of {"tool": ..., "arguments": ...}
 //                                becomes a tool call, and tool results go back as a user turn
+// Photos go to the Space first; everything else goes to the fallback first, to save the Space's quota for photos.
 // SPACE_GPU_SECONDS caps the GPU time asked for per Space call.
 
 export const DEFAULT_MODEL_SPACE = "https://taf2023-muse-glimmer-30b-dflash.hf.space";
@@ -163,8 +165,9 @@ export function spaceBackend(space: string, token: string | undefined, env: Env 
 
 // A plain OpenAI-compatible chat call with the tools already folded into the prompt. The JSON schema is passed
 // on too, since hosts like Ollama constrain decoding to it.
-export function chatBackend(baseURL: string, model: string, key: string | undefined): Backend {
+export function chatBackend(baseURL: string, model: string, key: string | undefined, vision = false): Backend {
   return async (req, system, turns) => {
+    if (!vision && turns.some((t) => t.images.length)) throw new Error("text-only, skipped for a photo");
     const messages = [
       { role: "system", content: system },
       ...turns.map((t) => ({ role: t.role, content: [{ type: "text", text: t.text }, ...t.images.map((url) => ({ type: "image_url", image_url: { url } }))] })),
@@ -185,8 +188,8 @@ export function backends(env: Env = process.env): { name: string; run: Backend }
   const list: { name: string; run: Backend }[] = [];
   if (env.MODEL_SPACE !== "off") list.push({ name: "muse-glimmer-30b (HF Space)", run: spaceBackend(env.MODEL_SPACE ?? DEFAULT_MODEL_SPACE, env.HF_TOKEN, env) });
   if (env.MODEL_FALLBACK_URL) {
-    const model = env.MODEL_FALLBACK_MODEL ?? "llama3.2-vision:11b";
-    list.push({ name: model, run: chatBackend(env.MODEL_FALLBACK_URL, model, env.MODEL_FALLBACK_KEY) });
+    const model = env.MODEL_FALLBACK_MODEL ?? "llama3.1:8b";
+    list.push({ name: model, run: chatBackend(env.MODEL_FALLBACK_URL, model, env.MODEL_FALLBACK_KEY, env.MODEL_FALLBACK_VISION === "1") });
   }
   return list;
 }
@@ -199,7 +202,11 @@ export function openFetch(env: Env = process.env) {
     let content: string | null = null;
     let used = "";
     const errors: string[] = [];
-    for (const b of backends(env)) {
+    // Photos need the Space. Anything else tries our own machine first, so the Space's small quota is kept for photos.
+    const photo = turns.some((t) => t.images.length);
+    const order = backends(env);
+    if (!photo) order.reverse();
+    for (const b of order) {
       try {
         content = await b.run(req, system, turns);
         used = b.name;

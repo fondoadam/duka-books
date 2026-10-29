@@ -4,6 +4,7 @@ import type { Infer } from "convex/values";
 import type { proposedEntry } from "../schema";
 import { metaOptions, modelsLive, textModel, visionModel } from "./ai";
 import { kes } from "./money";
+import { spokenAmount } from "./spoken";
 
 const extraction = z.object({
   entries: z.array(
@@ -113,5 +114,9 @@ export async function extractFromText(text: string, today: string, examples: Exa
     output: Output.object({ schema: modelExtraction }),
     providerOptions: metaOptions("extract", "medium"),
   });
-  return finish(output);
+  const out = finish(output);
+  // One line, no digits and one amount in words: the exact reading of the words is the amount.
+  const spoken = /\d/.test(text) ? null : spokenAmount(text);
+  if (spoken !== null && out.entries.length === 1) out.entries[0].amountKes = spoken;
+  return out;
 }

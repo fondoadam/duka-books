@@ -49,6 +49,23 @@ export function swahiliNumber(text: string): number | null {
   return tail === null ? null : thousands * 1000 + tail;
 }
 
+const NUMBER_WORDS = /^(mia|elfu|na|moja|mbili|tatu|nne|tano|sita|saba|nane|tisa|kumi|ishirini|thelathini|arobaini|hamsini|sitini|sabini|themanini|tisini)$/;
+
+// An amount spelled in Swahili words ("mia nne hamsini") read exactly, when the message holds exactly one. Small
+// models misread these (450 came back as 440, or 4,500), so callers let the exact reading win over the model's.
+export function spokenAmount(text: string): number | null {
+  const runs: string[][] = [[]];
+  for (const w of text.toLowerCase().split(/[^a-z]+/)) {
+    if (NUMBER_WORDS.test(w)) runs.at(-1)!.push(w);
+    else if (runs.at(-1)!.length) runs.push([]);
+  }
+  const values = runs
+    .map((r) => (r.at(-1) === "na" ? r.slice(0, -1) : r))
+    .filter((r) => r.length && r[0] !== "na")
+    .map((r) => swahiliNumber(r.join(" ")));
+  return values.length === 1 && values[0] !== null ? values[0] : null;
+}
+
 const VERBS: Record<string, "sale" | "purchase" | "expense"> = {
   uza: "sale",
   nunua: "purchase",

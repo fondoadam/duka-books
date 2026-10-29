@@ -55,6 +55,7 @@ describe("openFetch", () => {
   it("falls back to the own-machine host when the Space is out of quota", async () => {
     const fetchMock = vi.fn(async (url: string | URL) => {
       const u = String(url);
+      if (u.endsWith("/gradio_api/upload")) return Response.json(["/tmp/image-0.jpeg"]);
       if (u.endsWith("/gradio_api/call/chat")) return Response.json({ event_id: "e1" });
       if (u.includes("/gradio_api/call/chat/e1")) return new Response('event: error\ndata: {"title": "ZeroGPU quota exceeded"}\n\n');
       if (u === "https://mac.example/v1/chat/completions") return Response.json({ choices: [{ message: { content: '```json\n{"line":2}\n```' } }] });
@@ -63,14 +64,31 @@ describe("openFetch", () => {
     vi.stubGlobal("fetch", fetchMock);
     vi.spyOn(console, "warn").mockImplementation(() => {});
 
-    const res = await openFetch({ HF_TOKEN: "hf", MODEL_FALLBACK_URL: "https://mac.example/v1", MODEL_FALLBACK_KEY: "k" })("x", {
-      body: JSON.stringify({ model: "m", messages: [{ role: "user", content: "fix" }], response_format: { type: "json_object" } }),
+    const env = { HF_TOKEN: "hf", MODEL_FALLBACK_URL: "https://mac.example/v1", MODEL_FALLBACK_KEY: "k", MODEL_FALLBACK_VISION: "1" };
+    const photo = [{ type: "image_url", image_url: { url: "data:image/jpeg;base64,AA==" } }];
+    const res = await openFetch(env)("x", {
+      body: JSON.stringify({ model: "m", messages: [{ role: "user", content: photo }], response_format: { type: "json_object" } }),
     });
     const body = (await res.json()) as { model: string; choices: { message: { content: string } }[] };
-    expect(body.model).toBe("llama3.2-vision:11b");
+    expect(body.model).toBe("llama3.1:8b");
     expect(body.choices[0].message.content).toBe('{"line":2}');
     const sent = fetchMock.mock.calls.find(([u]) => String(u).startsWith("https://mac.example"))!;
     expect((sent[1] as RequestInit).headers).toMatchObject({ Authorization: "Bearer k" });
+    expect(fetchMock.mock.calls.some(([u]) => String(u).includes("/gradio_api/call/chat/e1"))).toBe(true);
+  });
+
+  it("sends text to our own machine first, keeping the Space quota for photos", async () => {
+    const fetchMock = vi.fn(async () => Response.json({ choices: [{ message: { content: "sawa" } }] }));
+    vi.stubGlobal("fetch", fetchMock);
+    await openFetch({ HF_TOKEN: "hf", MODEL_FALLBACK_URL: "https://mac.example/v1" })("x", { body: JSON.stringify({ model: "m", messages: [{ role: "user", content: "hi" }] }) });
+    expect(fetchMock.mock.calls.map(([u]) => String(u))).toEqual(["https://mac.example/v1/chat/completions"]);
+  });
+
+  it("never sends a photo to a text-only fallback", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("should not be called", { status: 500 })));
+    const photo = { model: "m", messages: [{ role: "user", content: [{ type: "image_url", image_url: { url: "data:image/jpeg;base64,AA==" } }] }] };
+    await expect(openFetch({ MODEL_SPACE: "off", MODEL_FALLBACK_URL: "https://mac.example/v1" })("x", { body: JSON.stringify(photo) })).rejects.toThrow("text-only");
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   it("says so when nothing is configured", async () => {

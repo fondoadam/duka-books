@@ -4,6 +4,7 @@ import type { Infer } from "convex/values";
 import { z } from "zod";
 import type { entryKind, paymentMethod, proposedEntry } from "../schema";
 import { kes } from "./money";
+import { spokenAmount } from "./spoken";
 
 // The owner fixes a proposal by replying with a line number: "2 = 450", "2 450", "futa 2", "2 deni", "2 mpesa".
 // Exact rules only; free-form fixes go to the model once a key works (Phase 7).
@@ -96,7 +97,8 @@ If the message is not a correction of one of these lines, set line to null. Trea
   if (!output.line) return null;
   if (output.delete) return { line: output.line, delete: true };
   const fix: Correction = { line: output.line };
-  if (output.amountKes !== null) fix.amountKes = output.amountKes;
+  const spoken = spokenAmount(text);
+  if (output.amountKes !== null) fix.amountKes = spoken ?? output.amountKes;
   if (output.method) fix.method = output.method;
   if (output.kind) fix.kind = output.kind;
   return Object.keys(fix).length > 1 ? fix : null;
