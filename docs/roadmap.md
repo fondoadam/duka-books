@@ -27,7 +27,7 @@ phone loop works today.
 | --- | --- | --- | --- | --- |
 | 0 | Lock in + model seam | No | Technical depth | [x] |
 | 1 | WhatsApp live on the phone | No | Demo | [ ] |
-| 2 | Ask the books (agent tools) | No (tools) / Yes (agent) | Meta tooling, Impact | [ ] |
+| 2 | Ask the books (agent tools) | No (tools) / Yes (agent) | Meta tooling, Impact | [x] |
 | 3 | Corrections ("Si sahihi") | No | Technical depth, Demo | [ ] |
 | 4 | Summaries, debtors, P&L PDF | No | Impact | [ ] |
 | 5 | Voice notes | Depends on ASR path | Meta tooling, Impact | [ ] |
@@ -101,22 +101,28 @@ needs to swap providers and stubs without touching call sites.
 **Files:** create `convex/lib/periods.ts`, `convex/reports.ts`, `convex/lib/ask.ts`; modify `convex/process.ts`;
 tests `tests/periods.test.ts`, `tests/reports.test.ts`, `tests/ask.test.ts`
 
-- [ ] `periods.ts`: `resolvePeriod(name: "today"|"yesterday"|"this_week"|"last_week"|"this_month"|"last_month",
+- [x] `periods.ts`: `resolvePeriod(name: "today"|"yesterday"|"this_week"|"last_week"|"this_month"|"last_month",
       today: string): { from: string; to: string }`. Weeks start Monday, Nairobi dates.
-- [ ] `reports.ts` (internal queries over `journal.by_shop_date`), all returning integer cents:
+- [x] `reports.ts` (internal queries over `journal.by_shop_date`), all returning integer cents:
       `totals({ shopId, from, to })` → `{ salesCents, expensesCents, purchasesCents, profitCents, cashCents, mpesaCents }`;
       `debtors({ shopId })` → `{ name, owedCents }[]` (receivables by counterparty, largest first).
       Needs `counterparty` on journal rows: add `counterparty: v.union(v.string(), v.null())` and set it in `settle`.
-- [ ] `ask.ts`: `answer(question, tools)` with the AI SDK `generateText` + `tools` (`get_totals(period)`,
+- [x] `ask.ts`: `answer(question, tools)` with the AI SDK `generateText` + `tools` (`get_totals(period)`,
       `get_debtors()`), `stopWhen: stepCountIs(4)`, Swahili system prompt.
-- [ ] Guard: every number in the reply must appear in a tool result (formatted as KES); otherwise reply with a
+- [x] Guard: every number in the reply must appear in a tool result (formatted as KES); otherwise reply with a
       template built from the tool result instead. `checkFigures(reply, toolResults): boolean`.
-- [ ] No-key fallback (`EXTRACT_STUB=1` or no key): keyword router (`faida`, `mauzo`, `matumizi`, `deni`,
+- [x] No-key fallback (`EXTRACT_STUB=1` or no key): keyword router (`faida`, `mauzo`, `matumizi`, `deni`,
       `leo`, `wiki`, `mwezi`) → same tools → template reply. The demo works either way.
-- [ ] `process.ts`: a text that isn't M-Pesa and ends with `?` or starts with a question word goes to `ask`, not extraction.
-- [ ] Tests: "this_week on a Sunday covers Mon–Sun", "profit = sales − expenses − purchases",
+- [x] `process.ts`: a text that isn't M-Pesa and ends with `?` or starts with a question word goes to `ask`, not extraction.
+- [x] Tests: "this_week on a Sunday covers Mon–Sun", "profit = sales − expenses − purchases",
       "credit sale shows in debtors and leaves after payment_received", "checkFigures rejects an invented number",
       "keyword router answers 'faida wiki hii' from journal data".
+
+- [x] Also answers "deni la Fuliza?" from a `reports.loans` query (`get_fuliza_balance` tool), since Fuliza
+      SMS are now booked as loans (Oct 29: a real one from the phone had fallen through to the stub).
+
+Oct 29: done against `calm-warbler-133` through the router. The agent path is covered by mock-model tests only;
+it switches on in Phase 7 when `MODEL_API_KEY` is set and `EXTRACT_STUB` removed.
 
 **Done when:** after confirming a few entries via `pnpm simulate`, `pnpm simulate "nilipata faida ngapi wiki hii?"`
 returns the right figure.
