@@ -24,18 +24,6 @@ function replier(ctx: ActionCtx, to: string) {
 }
 type Reply = ReturnType<typeof replier>;
 
-// Until MODEL_API_KEY works, EXTRACT_STUB=1 lets photos run the whole WhatsApp loop with fixed entries.
-function stubExtraction(today: string): Extraction {
-  return {
-    entries: [
-      { date: today, description: "Unga 2kg", quantity: 3, amountKes: 540, kind: "sale", method: "cash", counterparty: null, ref: null },
-      { date: today, description: "Sukari 1kg", quantity: 2, amountKes: 360, kind: "sale", method: "credit", counterparty: "Mama Njeri", ref: null },
-    ],
-    confidence: 0.5,
-    notes: "Majaribio: hizi ni rekodi za mfano, picha haijasomwa.",
-  };
-}
-
 export const inbound = internalAction({
   args: { inboundId: v.id("inbound") },
   handler: async (ctx, { inboundId }) => {
@@ -61,11 +49,11 @@ export const inbound = internalAction({
         let extraction: Extraction | null = null;
         const today = nairobiToday();
         if (inbound.kind === "image" && inbound.mediaId) {
-          if (process.env.EXTRACT_STUB === "1") extraction = stubExtraction(today);
-          else {
-            const media = await downloadMedia(inbound.mediaId);
-            extraction = await extractFromImage(media.bytes, media.mimeType, today);
-          }
+          // Stubbed extraction skips the download, so the simulator can send fake media ids.
+          const media = process.env.EXTRACT_STUB === "1"
+            ? { bytes: new Uint8Array(), mimeType: "image/jpeg" }
+            : await downloadMedia(inbound.mediaId);
+          extraction = await extractFromImage(media.bytes, media.mimeType, today);
         } else if (inbound.kind === "text" && inbound.text) {
           extraction = parseMpesa(inbound.text, today) ?? (await extractFromText(inbound.text, today));
         } else if (inbound.kind === "audio") {

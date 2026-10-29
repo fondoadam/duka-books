@@ -113,4 +113,21 @@ describe("WhatsApp loop", () => {
     await deliver(t, body);
     expect(await t.run((ctx) => ctx.db.query("journal").collect())).toHaveLength(0);
   });
+
+  it("runs a photo through the stub without downloading it, and posts it on Confirm", async () => {
+    vi.stubEnv("EXTRACT_STUB", "1");
+    const t = convexTest(schema, modules);
+    await deliver(t, webhook({ type: "image", image: { id: "fake-media", mime_type: "image/jpeg" } }));
+    const proposal = await latest(t);
+    expect(proposal.body).toContain("Unga 2kg");
+    await deliver(t, webhook({ type: "interactive", interactive: { type: "button_reply", button_reply: proposal.buttons![0] } }));
+    expect(await t.run((ctx) => ctx.db.query("journal").collect())).toHaveLength(2);
+  });
+
+  it("stubs extraction for non-M-Pesa text too", async () => {
+    vi.stubEnv("EXTRACT_STUB", "1");
+    const t = convexTest(schema, modules);
+    await deliver(t, webhook({ type: "text", text: { body: "nimeuza unga tatu" } }));
+    expect((await latest(t)).body).toContain("Nimepata rekodi 2");
+  });
 });

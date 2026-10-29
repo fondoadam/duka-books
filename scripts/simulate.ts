@@ -4,6 +4,7 @@
 //   pnpm simulate "TJK4H7XYZ1 Confirmed.You have received Ksh650.00 from JANE ..."
 //   pnpm simulate confirm        tap "Sawa, andika" on the latest proposal
 //   pnpm simulate reject         tap "Si sahihi"
+//   pnpm simulate photo          send a photo (needs EXTRACT_STUB=1 on the deployment: the media id is fake)
 import { execFileSync } from "node:child_process";
 import { createHmac, randomUUID } from "node:crypto";
 
@@ -12,7 +13,7 @@ const site = process.env.CONVEX_SITE_URL;
 const secret = process.env.WHATSAPP_APP_SECRET;
 const input = process.argv.slice(2).join(" ").trim();
 if (!site || !secret || !input) {
-  console.error('Usage: pnpm simulate "<message>" | confirm | reject   (needs CONVEX_SITE_URL and WHATSAPP_APP_SECRET)');
+  console.error('Usage: pnpm simulate "<message>" | confirm | reject | photo   (needs CONVEX_SITE_URL and WHATSAPP_APP_SECRET)');
   process.exit(1);
 }
 
@@ -26,6 +27,8 @@ if (input === "confirm" || input === "reject") {
   const button = before.flatMap((m) => m.buttons ?? []).find((b) => b.id.startsWith(`${input}:`));
   if (!button) throw new Error("No proposal with buttons in the outbox yet. Send a message first.");
   message = { type: "interactive", interactive: { type: "button_reply", button_reply: button } };
+} else if (input === "photo") {
+  message = { type: "image", image: { id: `sim-media-${randomUUID()}`, mime_type: "image/jpeg" } };
 } else {
   message = { type: "text", text: { body: input } };
 }

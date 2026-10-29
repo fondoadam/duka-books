@@ -11,7 +11,8 @@ double-entry ledger. The model proposes; it never writes to the books on its own
 ## Stack
 
 - **Convex**: database, WhatsApp webhook (HTTP actions), scheduler
-- **Meta Model API** (`muse-spark-1.1`), OpenAI-compatible, through the Vercel AI SDK
+- **Meta Model API** (`muse-spark-1.1`), OpenAI-compatible, through the Vercel AI SDK. `MODEL_PROVIDER=compat`
+  switches to Llama open weights on any OpenAI-compatible host (see `.env.example`)
 - **WhatsApp Cloud API**, test number for the demo
 
 ## Layout
@@ -24,7 +25,7 @@ convex/
   process.ts        image/text -> extraction -> proposal with Confirm/Reject buttons
   ledger.ts         propose, and settle (confirm -> journal lines); refuses a transaction code twice
   outbox.ts         log of every reply (read by the simulator and tests)
-  lib/ai.ts         Meta Model API provider
+  lib/ai.ts         model provider (Meta Model API, or any OpenAI-compatible host)
   lib/extract.ts    extraction prompt + Zod schema
   lib/mpesa.ts      exact parser for forwarded M-Pesa SMS (the model handles everything else)
   lib/posting.ts    entry -> balanced debit/credit lines
@@ -75,12 +76,13 @@ The temporary token expires after 24 hours. Before the demo, create a System Use
 
 ## Without a phone or model key
 
-Set `WHATSAPP_DRY_RUN=1` (replies go to the `outbox` table, not Meta) and `EXTRACT_STUB=1` (photos return
-fixed entries) on the deployment, and put the same `WHATSAPP_APP_SECRET` in `.env.local`. Then:
+Set `WHATSAPP_DRY_RUN=1` (replies go to the `outbox` table, not Meta) and `EXTRACT_STUB=1` (photos and
+non-M-Pesa text return fixed entries) on the deployment, and put the same `WHATSAPP_APP_SECRET` in `.env.local`. Then:
 
 ```bash
 pnpm simulate "TJM1QRS3TU Confirmed. Ksh2,500.00 sent to JOHN KAMAU 0722000000 on 27/10/26 at 10:02 AM. ..."
 pnpm simulate confirm
+pnpm simulate photo     # a fake photo, answered by the stub
 ```
 
 ## Scripts
@@ -91,5 +93,5 @@ pnpm simulate confirm
 | `pnpm typecheck` | Type-check `convex/` |
 | `pnpm test` | Unit tests and the end-to-end WhatsApp loop (convex-test) |
 | `pnpm smoke:extract <file or text>` | Run extraction once, outside WhatsApp |
-| `pnpm simulate <text \| confirm \| reject>` | Send a signed fake webhook and print the replies |
+| `pnpm simulate <text \| confirm \| reject \| photo>` | Send a signed fake webhook and print the replies |
 | `pnpm deploy` | Deploy to Convex production |

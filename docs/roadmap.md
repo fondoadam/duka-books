@@ -25,7 +25,7 @@ phone loop works today.
 
 | Phase | Name | Needs model key | Scores on | Status |
 | --- | --- | --- | --- | --- |
-| 0 | Lock in + model seam | No | Technical depth | [ ] |
+| 0 | Lock in + model seam | No | Technical depth | [x] |
 | 1 | WhatsApp live on the phone | No | Demo | [ ] |
 | 2 | Ask the books (agent tools) | No (tools) / Yes (agent) | Meta tooling, Impact | [ ] |
 | 3 | Corrections ("Si sahihi") | No | Technical depth, Demo | [ ] |
@@ -52,15 +52,15 @@ needs to swap providers and stubs without touching call sites.
 
 **Files:** `convex/lib/ai.ts`, `convex/lib/extract.ts`, `convex/process.ts`, `.env.example`, `tests/ai.test.ts`
 
-- [ ] Commit the staged work as it is (`feat: M-Pesa parser, outbox, simulator, end-to-end tests`). Leave the
+- [x] Commit the staged work as it is (`feat: M-Pesa parser, outbox, simulator, end-to-end tests`). Leave the
       two screenshots and `docs/discord-messages.txt` out unless asked.
-- [ ] `ai.ts`: read `MODEL_PROVIDER` (`meta` default, or `compat` for any OpenAI-compatible host), with
+- [x] `ai.ts`: read `MODEL_PROVIDER` (`meta` default, or `compat` for any OpenAI-compatible host), with
       `MODEL_BASE_URL`, `MODEL_API_KEY`, `VISION_MODEL`, `TEXT_MODEL`. Export `visionModel()` and `textModel()`
       (Muse Spark for both under `meta`). Keep `supportsStructuredOutputs` behind `MODEL_STRUCTURED=0|1`.
-- [ ] Move the stub out of `process.ts`: `extractFromImage` / `extractFromText` return the stub when
+- [x] Move the stub out of `process.ts`: `extractFromImage` / `extractFromText` return the stub when
       `EXTRACT_STUB=1`, so every caller (and later phases) get stubbing for free.
-- [ ] `.env.example`: document the new vars, with a commented Llama-on-partner example.
-- [ ] Tests: `ai.test.ts` → "picks the meta provider by default", "uses compat base URL and models when set".
+- [x] `.env.example`: document the new vars, with a commented Llama-on-partner example.
+- [x] Tests: `ai.test.ts` → "picks the meta provider by default", "uses compat base URL and models when set".
 
 **Done when:** `pnpm test` passes and `pnpm simulate` still proposes and confirms an M-Pesa SMS.
 
