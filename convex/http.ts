@@ -66,4 +66,27 @@ http.route({
   }),
 });
 
+// Meta asks for a privacy policy and data-deletion URL before the app can be published.
+const PRIVACY = `<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Duka Books privacy</title>
+<style>body{font:16px/1.6 system-ui,sans-serif;max-width:40rem;margin:2rem auto;padding:0 1rem;color:#1a1a1a;background:#fff}</style>
+</head><body>
+<h1>Duka Books privacy policy</h1>
+<p>Duka Books is a WhatsApp bookkeeper for small shops, built for the Meta AI Developer Hackathon.</p>
+<h2>What we store</h2>
+<p>Your WhatsApp number, the messages, photos and voice notes you send the Duka Books number, the records read
+from them, and the entries you confirm. Photos and voice notes are sent to Meta's AI models to read them.</p>
+<h2>What we don't do</h2>
+<p>We don't sell or share your data, use it for advertising, or message anyone but you.</p>
+<h2 id="deletion">Deleting your data</h2>
+<p>Send "futa data yangu" or "delete my data" to the Duka Books number. We delete your shop and all its
+records within 7 days.</p>
+</body></html>`;
+
+http.route({
+  path: "/privacy",
+  method: "GET",
+  handler: httpAction(async () => new Response(PRIVACY, { headers: { "content-type": "text/html; charset=utf-8" } })),
+});
+
 export default http;
