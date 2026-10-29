@@ -7,3 +7,8 @@ node_modules
 .DS_Store
 samples/*
 !samples/.gitkeep
+!samples/README.md
+!samples/expected/
+# Answer keys hold a real shop's figures: commit only the format example.
+samples/expected/*
+!samples/expected/_example.json

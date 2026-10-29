@@ -89,8 +89,9 @@ npx convex env set WHATSAPP_APP_SECRET "<app secret>"
 npx convex env remove WHATSAPP_DRY_RUN     # replies now really go to WhatsApp
 ```
 
-Leave `EXTRACT_STUB=1` set until the Meta model key works: photos get sample entries, and M-Pesa SMS are read
-exactly by our parser either way.
+Until `MODEL_API_KEY` is set, photos get sample entries; M-Pesa SMS are read exactly by our parser either way.
+Setting the key turns every model path live at once (`modelsLive()` in `convex/lib/ai.ts`). `EXTRACT_STUB` is
+retired and ignored; `MODEL_STUB=1` forces the stubs even with a key.
 
 Then open `.env.local` and replace the `WHATSAPP_APP_SECRET=` line with the same app secret, so `pnpm simulate`
 keeps signing its fake webhooks correctly.
@@ -134,7 +135,7 @@ Send these to the test number, in order:
 | A real M-Pesa SMS (long-press, Forward) | "Nimepata rekodi 1: …" with **Sawa, andika** / **Si sahihi** buttons |
 | Tap **Sawa, andika** | "✅ Nimeandika rekodi 1 kwenye vitabu." |
 | The same SMS again | "Rekodi 1 tayari ziko kwenye vitabu, nimeziruka." |
-| Any photo | "Nimepata rekodi 2: Unga 2kg … Sukari 1kg …" (sample entries while `EXTRACT_STUB=1`) |
+| Any photo | "Nimepata rekodi 2: Unga 2kg … Sukari 1kg …" (sample entries until `MODEL_API_KEY` is set) |
 
 You should also see blue ticks and "typing…" while the bot works.
 

@@ -1,0 +1,9 @@
+{
+  "file": "ledger-1.jpg",
+  "entries": [
+    { "description": "Unga 2kg", "amountKes": 540, "kind": "sale" },
+    { "description": "Sukari", "amountKes": 360, "kind": "sale" }
+  ],
+  "writtenTotalKes": 900,
+  "note": "Answer key format. Copy to ledger-1.json and fill in from the real photo."
+}

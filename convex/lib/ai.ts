@@ -26,6 +26,13 @@ export function modelConfig(env: Env = process.env) {
   };
 }
 
+// The one switch. With a model key (Meta Model API, or MODEL_PROVIDER=compat for Llama on a partner host) every
+// model path is live: photo and text extraction, the ask agent, free-text corrections. Without one, stubs and the
+// exact parsers run the whole loop. MODEL_STUB=1 forces the stubs even with a key (a fallback during a live demo).
+export function modelsLive(env: Env = process.env) {
+  return !!env.MODEL_API_KEY && env.MODEL_STUB !== "1";
+}
+
 function provider() {
   const config = modelConfig();
   return {

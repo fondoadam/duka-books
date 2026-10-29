@@ -144,7 +144,6 @@ describe("WhatsApp loop", () => {
   });
 
   it("runs a photo through the stub without downloading it, and posts it on Confirm", async () => {
-    vi.stubEnv("EXTRACT_STUB", "1");
     const t = convexTest(schema, modules);
     await deliver(t, webhook({ type: "image", image: { id: "fake-media", mime_type: "image/jpeg" } }));
     const proposal = await latest(t);
@@ -154,7 +153,6 @@ describe("WhatsApp loop", () => {
   });
 
   it("stubs extraction for non-M-Pesa text too", async () => {
-    vi.stubEnv("EXTRACT_STUB", "1");
     const t = convexTest(schema, modules);
     await deliver(t, webhook({ type: "text", text: { body: "nimeuza unga tatu" } }));
     expect((await latest(t)).body).toContain("Nimepata rekodi 2");
@@ -195,8 +193,6 @@ describe("Corrections", () => {
     await deliver(t, webhook({ type: "image", image: { id: "fake-media", mime_type: "image/jpeg" } }));
     await tapButton(t, await button(t, "reject:"));
   }
-
-  beforeEach(() => vi.stubEnv("EXTRACT_STUB", "1"));
 
   it("'Si sahihi' asks for the line to fix", async () => {
     const t = convexTest(schema, modules);
@@ -283,7 +279,6 @@ describe("Reports on WhatsApp", () => {
   });
 
   it("'Nani ananidai?' lists debtors with a total", async () => {
-    vi.stubEnv("EXTRACT_STUB", "1");
     const t = convexTest(schema, modules);
     await deliver(t, webhook({ type: "image", image: { id: "fake-media", mime_type: "image/jpeg" } }));
     await deliver(t, webhook({ type: "interactive", interactive: { type: "button_reply", button_reply: (await latest(t)).buttons![0] } }));
@@ -307,7 +302,6 @@ describe("Reports on WhatsApp", () => {
 describe("Voice notes", () => {
   it("a voice note with ASR_STUB proposes the transcribed sale", async () => {
     vi.stubEnv("ASR_STUB", "1");
-    vi.stubEnv("EXTRACT_STUB", "1");
     const t = convexTest(schema, modules);
     await deliver(t, webhook({ type: "audio", audio: { id: "fake-voice", mime_type: "audio/ogg; codecs=opus" } }));
     const [proposal, heard] = await t.query(internal.outbox.recent, { to: OWNER, limit: 2 });
@@ -321,7 +315,6 @@ describe("Voice notes", () => {
 
 describe("Receipt splitting", () => {
   it("stub crops give one proposal with every receipt's entries, after the annotated photo", async () => {
-    vi.stubEnv("EXTRACT_STUB", "1");
     const t = convexTest(schema, modules);
     await deliver(t, webhook({ type: "image", image: { id: "fake-media", mime_type: "image/jpeg", caption: "Risiti za leo" } }));
     const [proposal, annotated] = await t.query(internal.outbox.recent, { to: OWNER, limit: 2 });

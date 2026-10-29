@@ -2,15 +2,15 @@ import { v } from "convex/values";
 import { internalAction, type ActionCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
-import { textModel } from "./lib/ai";
+import { modelsLive, textModel } from "./lib/ai";
 import { answer, isQuestion } from "./lib/ask";
-import { parseCorrection, type Correction } from "./lib/corrections";
+import { interpretCorrection, parseCorrection, type Correction } from "./lib/corrections";
 import { extractFromImage, extractFromText, type Extraction } from "./lib/extract";
 import { kes } from "./lib/money";
 import { parseMpesa } from "./lib/mpesa";
 import { nairobiToday, resolvePeriod } from "./lib/periods";
 import { replier, type Reply } from "./lib/reply";
-import { segmentReceipts } from "./lib/segment";
+import { segmentReceipts, segmentStubbed } from "./lib/segment";
 import { parseSpoken } from "./lib/spoken";
 import { asrStubbed, transcribe } from "./lib/transcribe";
 import { downloadMedia, isDryRun, markRead } from "./lib/whatsapp";
@@ -40,11 +40,9 @@ export const inbound = internalAction({
       } else if (inbound.kind === "text" && inbound.text) {
         await onText(ctx, shop, inboundId, reply, inbound.text, today);
       } else if (inbound.kind === "image" && inbound.mediaId) {
-        // Stubbed extraction skips the download, so the simulator can send fake media ids.
-        const media = process.env.EXTRACT_STUB === "1"
-          ? { bytes: new Uint8Array(), mimeType: "image/jpeg" }
-          : await downloadMedia(inbound.mediaId);
-        if (/risiti|receipt/i.test(inbound.text ?? "")) await onReceipts(ctx, shop._id, inboundId, reply, media, today);
+        const receipts = /risiti|receipt/i.test(inbound.text ?? "");
+        const media = await fetchMedia(shop, inbound.mediaId, "image/jpeg", modelsLive() || (receipts && !segmentStubbed()));
+        if (receipts) await onReceipts(ctx, shop._id, inboundId, reply, media, today);
         else {
           const examples = await ctx.runQuery(internal.ledger.recentCorrections, { shopId: shop._id });
           await propose(ctx, shop._id, inboundId, reply, await extractFromImage(media.bytes, media.mimeType, today, examples));
@@ -63,6 +61,13 @@ export const inbound = internalAction({
     }
   },
 });
+
+// Downloads a photo or voice note only when a live step will read it. Simulated shops send made-up media ids, so
+// they never download; the stubs (and the receipt fixture) take the empty bytes.
+async function fetchMedia(shop: Doc<"shops">, mediaId: string, mimeType: string, needed: boolean) {
+  if (!needed || shop.simulated) return { bytes: new Uint8Array(), mimeType };
+  return downloadMedia(mediaId);
+}
 
 // Button ids are "<action>:<proposalId>": confirm, reject ("Si sahihi" starts a correction) or cancel ("Ghairi").
 async function onButton(ctx: ActionCtx, shop: Doc<"shops">, reply: Reply, payload: string) {
@@ -96,7 +101,13 @@ async function onText(ctx: ActionCtx, shop: Doc<"shops">, inboundId: Id<"inbound
   const exact = parseMpesa(text, today) ?? parseSpoken(text, today);
   if (exact) return propose(ctx, shop._id, inboundId, reply, exact);
   if (isQuestion(text)) return reply.text(await ask(ctx, shop._id, text, today));
-  if (correcting) return reply.text(`Sijaelewa marekebisho hayo.\n${CORRECTION_HELP}\nAu andika 'Ghairi'.`);
+  if (correcting) {
+    // Live only: the model maps a free-form fix onto the same correction shape.
+    const entries = modelsLive() ? await ctx.runQuery(internal.ledger.correcting, { shopId: shop._id }) : null;
+    const guess = entries ? await interpretCorrection(text, entries, textModel()) : null;
+    if (guess) return correct(ctx, shop._id, reply, guess);
+    return reply.text(`Sijaelewa marekebisho hayo.\n${CORRECTION_HELP}\nAu andika 'Ghairi'.`);
+  }
   const examples = await ctx.runQuery(internal.ledger.recentCorrections, { shopId: shop._id });
   return propose(ctx, shop._id, inboundId, reply, await extractFromText(text, today, examples));
 }
@@ -111,9 +122,8 @@ async function onVoice(
   mimeType: string | null,
   today: string,
 ) {
-  // The stub ignores the audio, so the simulator's fake media ids are never downloaded.
   const stub = asrStubbed();
-  const media = stub ? { bytes: new Uint8Array(), mimeType: mimeType ?? "audio/ogg" } : await downloadMedia(mediaId);
+  const media = await fetchMedia(shop, mediaId, mimeType ?? "audio/ogg", !stub);
   const transcript = await transcribe(media.bytes, media.mimeType);
   if (!transcript) return reply.text("Sikusikia maneno yoyote. Jaribu tena, au andika ujumbe.");
   await reply.text(`🎙️ Nimesikia: "${transcript}"${stub ? "\n(Majaribio: sauti yako haijasomwa bado.)" : ""}`);
@@ -138,7 +148,8 @@ async function onReceipts(
   if (annotated) {
     const storageId = await ctx.storage.store(new Blob([new Uint8Array(annotated)], { type: "image/jpeg" }));
     const link = await ctx.storage.getUrl(storageId);
-    if (link) await reply.image(link, `🧾 Nimeona risiti ${crops.length} kwenye picha. Nazisoma moja moja…`);
+    const test = segmentStubbed() ? "\n(Majaribio: picha ya mfano, si yako.)" : "";
+    if (link) await reply.image(link, `🧾 Nimeona risiti ${crops.length} kwenye picha. Nazisoma moja moja…${test}`);
   }
   const read = await Promise.all(crops.map((c) => extractFromImage(c.bytes, "image/jpeg", today, examples)));
   const notes = read.map((r) => r.notes);
@@ -194,9 +205,8 @@ function lines(entries: { description: string; amountCents: number; kind: string
   return out;
 }
 
-// The agent needs a working model; until the key arrives (EXTRACT_STUB=1 or no key) the keyword router answers.
+// The agent needs a working model; until the key arrives (see modelsLive) the keyword router answers.
 function ask(ctx: ActionCtx, shopId: Id<"shops">, question: string, today: string) {
-  const live = process.env.EXTRACT_STUB !== "1" && !!process.env.MODEL_API_KEY;
   return answer(
     question,
     {
@@ -204,7 +214,7 @@ function ask(ctx: ActionCtx, shopId: Id<"shops">, question: string, today: strin
       debtors: () => ctx.runQuery(internal.reports.debtors, { shopId }),
       loans: () => ctx.runQuery(internal.reports.loans, { shopId }),
     },
-    live ? textModel() : undefined,
+    modelsLive() ? textModel() : undefined,
   );
 }
 

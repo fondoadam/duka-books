@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { modelConfig } from "../convex/lib/ai";
+import { modelConfig, modelsLive } from "../convex/lib/ai";
 
 describe("modelConfig", () => {
   it("picks the meta provider and Muse Spark by default", () => {
@@ -33,5 +33,16 @@ describe("modelConfig", () => {
   it("refuses compat without a base URL or models, and unknown providers", () => {
     expect(() => modelConfig({ MODEL_PROVIDER: "compat", VISION_MODEL: "a", TEXT_MODEL: "b" })).toThrow("MODEL_BASE_URL");
     expect(() => modelConfig({ MODEL_PROVIDER: "openai" })).toThrow("Unknown MODEL_PROVIDER");
+  });
+});
+
+describe("modelsLive", () => {
+  it("is the one switch: a key turns every model path live, MODEL_STUB=1 forces the stubs", () => {
+    expect(modelsLive({})).toBe(false);
+    expect(modelsLive({ EXTRACT_STUB: "1" })).toBe(false);
+    expect(modelsLive({ MODEL_API_KEY: "k" })).toBe(true);
+    expect(modelsLive({ MODEL_API_KEY: "k", EXTRACT_STUB: "1" })).toBe(true); // retired: ignored
+    expect(modelsLive({ MODEL_API_KEY: "k", MODEL_STUB: "1" })).toBe(false);
+    expect(modelsLive({ MODEL_PROVIDER: "compat", MODEL_API_KEY: "fw_k" })).toBe(true);
   });
 });

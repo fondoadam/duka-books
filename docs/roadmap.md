@@ -32,7 +32,7 @@ phone loop works today.
 | 4 | Summaries, debtors, P&L PDF | No | Impact | [x] |
 | 5 | Voice notes | Depends on ASR path | Meta tooling, Impact | [x] stub (real ASR: your step) |
 | 6 | SAM 3.1 receipt splitting | No (hosted SAM) | Meta tooling | [x] stub + SAM 3 Space client (token: your step) |
-| 7 | Key day: Muse Spark live | **Yes** | Meta tooling, Demo | [ ] |
+| 7 | Key day: Muse Spark live | **Yes** | Meta tooling, Demo | [ ] prep done; needs key |
 | 8 | Real shop week + demo video | Yes | Demo, Impact | [ ] |
 | 9 | Write-up and submit | No | All | [ ] |
 
@@ -274,13 +274,30 @@ inside the normal Convex runtime (it needs a two-line `Buffer` shim there).
 
 - [ ] Answer the open questions in `plan.md` first: does `response_format: json_schema` work? (`MODEL_STRUCTURED`)
       Image size limits? Latency per photo?
-- [ ] `pnpm eval`: runs extraction over `samples/*` and compares to `samples/expected/*.json` (hand-written for
+- [x] `pnpm eval`: runs extraction over `samples/*` and compares to `samples/expected/*.json` (hand-written for
       5–10 real ledger photos and receipts). Prints per-file line recall and amount accuracy. Re-run after every prompt change.
 - [ ] Tune the prompt until amounts are right on the eval set. If a line can't be read, it must be left out and
       named in notes, never guessed.
-- [ ] Turn the live paths on: remove `EXTRACT_STUB`, enable the Phase 2 agent and Phase 3 model fallback for
-      free-text corrections.
-- [ ] Sum check: if a ledger page shows a written total, compare it to the sum of extracted lines and warn the owner when they differ.
+- [x] Turn the live paths on: one switch, `modelsLive()` in `lib/ai.ts` = `MODEL_API_KEY` set (and `MODEL_STUB`
+      not `1`). It drives photo/text extraction, the Phase 2 agent and the Phase 3 model fallback for free-text
+      corrections (`interpretCorrection`). `EXTRACT_STUB` is retired and ignored.
+- [x] Sum check: if a ledger page shows a written total, compare it to the sum of extracted lines and warn the owner when they differ.
+      (`writtenTotalKes` in the model schema; `sumCheck` accepts a total matching all lines or one kind of line.)
+
+Oct 29 prep, without a key: everything above marked [x] is built and tested with mock models. Still open (needs
+the key): the questions in `plan.md`, real answer keys, prompt tuning.
+
+**Your steps on key day (or with the Llama fallback):**
+1. Meta key: put `MODEL_API_KEY=...` in `.env.local`, run `pnpm smoke:extract samples/<a ledger photo>.jpg`.
+   If it errors on `response_format`, add `MODEL_STRUCTURED=0`. Note the latency it prints.
+   Llama fallback instead: `MODEL_PROVIDER=compat`, `MODEL_BASE_URL`, `VISION_MODEL`, `TEXT_MODEL`,
+   `MODEL_API_KEY` (example in `.env.example`).
+2. Put 5–10 real photos in `samples/` and write `samples/expected/<name>.json` for each (format in
+   `samples/README.md`). Run `pnpm eval`. Send me the output and I'll tune the prompt.
+3. Go live on the deployment, same values: `npx convex env set MODEL_API_KEY ...` (plus the compat vars for
+   Llama). That single change makes photos, free text, "ask" and free-text corrections use the model. You can
+   `npx convex env remove EXTRACT_STUB` to tidy up; it is already ignored. If the model misbehaves during a demo:
+   `npx convex env set MODEL_STUB 1`.
 
 **Done when:** `pnpm eval` reports every amount correct on at least 8 of 10 samples, and the phone loop works with no stubs.
 

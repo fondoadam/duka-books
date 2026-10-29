@@ -5,7 +5,7 @@
 //   pnpm simulate "TJK4H7XYZ1 Confirmed.You have received Ksh650.00 from JANE ..."
 //   pnpm simulate confirm        tap "Sawa, andika" on the latest proposal
 //   pnpm simulate reject         tap "Si sahihi"
-//   pnpm simulate photo          send a photo (needs EXTRACT_STUB=1 on the deployment: the media id is fake)
+//   pnpm simulate photo          send a photo (the media id is fake: simulated shops never download media)
 //   pnpm simulate risiti         a photo captioned "risiti": receipt splitting (stub: three fixture receipts)
 //   pnpm simulate voice          send a voice note (the stubbed transcriber ignores the fake media id)
 //   pnpm simulate ripoti         today's summary; "ripoti ya mwezi" sends the P&L PDF (its link is printed)

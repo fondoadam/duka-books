@@ -148,3 +148,13 @@ export const recentCorrections = internalQuery({
     return rows.map(({ before, after }) => ({ before, after }));
   },
 });
+
+// The lines of the proposal the shop is correcting, for the model fallback. Null when none is open.
+export const correcting = internalQuery({
+  args: { shopId: v.id("shops") },
+  handler: async (ctx, { shopId }) => {
+    const shop = await ctx.db.get(shopId);
+    const proposal = shop?.pendingCorrection ? await ctx.db.get(shop.pendingCorrection) : null;
+    return proposal?.status === "correcting" ? proposal.entries : null;
+  },
+});
