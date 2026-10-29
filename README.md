@@ -33,7 +33,7 @@ eval.
 We didn't build these and use them as they are:
 
 - **Meta's models**: Muse Glimmer 30B (`meta-models/Muse-Glimmer-30B`, Apache-2.0; run as Unsloth's 4-bit build),
-  Llama 3.2 Vision 11B (Llama 3.2 Community Licence), SAM 3 (`facebook/sam3`, under Meta's SAM licence), and Muse
+  Llama 3.1 8B (Llama 3.1 Community Licence), SAM 3 (`facebook/sam3`, under Meta's SAM licence), and Muse
   Spark on the Meta Model API for when a key is available.
 - **Muse Glimmer hosting**: the public Hugging Face Space
   [`Taf2023/Muse-Glimmer-30B-DFlash`](https://huggingface.co/spaces/Taf2023/Muse-Glimmer-30B-DFlash) (4-bit weights
@@ -52,8 +52,11 @@ model call through one adapter that speaks the OpenAI format to the app:
 
 1. **Muse Glimmer 30B** on a free Hugging Face ZeroGPU Space. Best quality, but the free GPU quota is a handful of
    calls a day.
-2. **Llama 3.2 Vision 11B** in Ollama on our own Mac mini (M4, 16 GB), behind a token-checked proxy and a Cloudflare
-   tunnel (`pnpm llama:serve`). It takes over whenever the Space is out of quota or down.
+2. **Llama 3.1 8B** in Ollama on our own Mac mini (M4, 16 GB), behind a token-checked proxy and a Cloudflare tunnel
+   (`pnpm llama:serve`). It reads typed records, corrections and questions, and takes those first so the Space's
+   quota is kept for photos. No Meta vision model fits in 16 GB (Glimmer's smallest Mac build needs 24 GB, and
+   Ollama no longer runs Llama 3.2 Vision), so photos are read only by Muse Glimmer; when its quota is gone the
+   owner is asked to try again later.
 
 Neither host takes tool calls or a JSON schema, so the adapter adds both to the prompt and parses the reply back into
 an OpenAI tool call or JSON object. The ask agent, extraction and corrections code is the same code that would run on
@@ -62,7 +65,7 @@ Muse Spark.
 | Model | Job | Code | Status (Oct 29) |
 | --- | --- | --- | --- |
 | **Muse Glimmer 30B** (open weights) | Vision extraction of handwritten Swahili/Sheng ledgers and receipts into a Zod schema; free-text records; corrections; the ask agent | `convex/lib/extract.ts`, `convex/lib/space.ts` | **Live.** A handwritten-style ledger photo: 6 of 6 lines right, crossed-out line skipped, total matched, about 30 s |
-| **Llama 3.2 Vision 11B** (open weights, our Mac) | The same, when the Space quota runs out | `infra/local-llama.mjs`, `convex/lib/space.ts` | See the measurement below |
+| **Llama 3.1 8B** (open weights, our Mac) | Typed records, free-text corrections and the ask agent | `infra/local-llama.mjs`, `convex/lib/space.ts` | **Live** through the WhatsApp webhook: a 4-line Swahili record in about 20 s, questions in 2 to 4 s. Weaker than Glimmer on kinds and methods (the owner's confirm step catches it), and it misreads spelled-out amounts, so an exact Swahili number reader overrides it |
 | **Agent with tools** | Answers questions with `get_totals(period)`, `get_debtors()`, `get_fuliza_balance()`. A figure guard rejects any number the tools didn't return | `convex/lib/ask.ts` | Live through the adapter's prompt-based tool calls; keyword router as backstop |
 | **Free-text corrections** | Maps "sukari ilikuwa mia nne hamsini" (the sugar was 450) onto a line fix | `convex/lib/corrections.ts` | Live through the adapter. Exact rules handle `2 = 450` without a model |
 | **SAM 3** | Finds every receipt in one photo (text prompt "receipt"), then crops and annotates | `convex/lib/segment.ts`, `infra/modal_app.py` | **Live** through a free ZeroGPU Space: 3 real receipts → 3 boxes in about 3 s |
@@ -105,7 +108,7 @@ flowchart LR
     mpesa["Exact parsers<br/>M-Pesa, Fuliza, spoken"]
     sam["SAM 3: split receipts"]
     asr["Omnilingual ASR: voice"]
-    spark["Muse Glimmer 30B → Llama 3.2 Vision<br/>+ shop's past corrections"]
+    spark["Muse Glimmer 30B (photos) / Llama 3.1 8B (text)<br/>+ shop's past corrections"]
   end
   process --> mpesa
   process --> sam --> spark
@@ -186,12 +189,12 @@ convex/
   pnl.ts           monthly P&L PDF to storage, sent as a WhatsApp document
   lib/ai.ts        model provider + the one live switch
   lib/space.ts     open-weights adapter: Muse Glimmer Space, then own-machine Llama; tools + JSON via the prompt
-  lib/extract.ts   extraction (Muse Glimmer / Llama / Muse Spark), few-shot from corrections, sum check
+  lib/extract.ts   extraction (Muse Glimmer / Llama 3.1 / Muse Spark), few-shot from corrections, sum check
   lib/ask.ts       tool agent, figure guard, keyword router
   lib/segment.ts   SAM 3 receipt boxes, crops, annotated image
   lib/transcribe.ts  voice-note ASR seam
   lib/mpesa.ts, lib/spoken.ts, lib/corrections.ts   exact parsers
-infra/local-llama.mjs  Llama 3.2 Vision on our Mac: token proxy + Cloudflare tunnel, writes the URL to Convex
+infra/local-llama.mjs  Llama 3.1 8B on our Mac: token proxy + Cloudflare tunnel, writes the URL to Convex
 infra/modal_app.py  self-hosted SAM 3.1 + Omnilingual ASR (untested; needs credits)
 scripts/            simulate, smoke-extract, eval
 docs/               plan, roadmap (phase status), WhatsApp setup, submission checklist

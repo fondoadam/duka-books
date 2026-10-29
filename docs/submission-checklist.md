@@ -5,7 +5,8 @@ https://cerebralvalley.ai/e/meta-ai-developer-hackathon/hackathon/submit
 
 ## Before the video
 
-- [ ] Model key (or Llama fallback) live: `npx convex env set MODEL_API_KEY …`. Check one real ledger photo on the phone (roadmap Phase 7).
+- [x] Models live without a key (Oct 29): `MODEL_PROVIDER=open`, Muse Glimmer 30B on the ZeroGPU Space for photos, Llama 3.1 8B on the Mac mini for text (`com.dukabooks.llama` login agent).
+- [ ] Check one real ledger photo on the phone. The free Space quota is a handful of calls a day, so don't spend it on tests on recording day; record the video right after the quota resets.
 - [ ] `pnpm eval` on 5–10 real samples: every amount right on at least 8 of 10.
 - [ ] SAM: ~~`HF_TOKEN` + `SEGMENT_PROVIDER=hf-space` set~~ (done Oct 29); a photo of 3 real receipts captioned *risiti* gives 3 groups (Phase 6).
 - [ ] Voice: a real ASR host, or say plainly in the write-up and video that voice runs on a stub (Phase 5).
@@ -39,7 +40,7 @@ https://cerebralvalley.ai/e/meta-ai-developer-hackathon/hackathon/submit
 - [ ] Project name, one-line pitch: "A WhatsApp bookkeeper for Kenya's dukas, on Meta's models."
 - [ ] Repo link, video link, write-up (the README's first sections work as the write-up).
 - [ ] Track: indie. Theme: Build for Your World.
-- [ ] Which Meta tools were used: Muse Spark (vision, tools agent), SAM 3, Omnilingual ASR / Llama fallback. Name exactly what was live.
+- [ ] Which Meta tools were used: Muse Glimmer 30B (photos, open weights), Llama 3.1 8B (text, agent, corrections, own Mac), SAM 3 (receipt splitting). Muse Spark is wired but never had credits; voice notes run on a stub transcript. Name exactly what was live.
 - [ ] Claim the $150 Meta credit through the Oct 26 email form by Nov 4, 9 PM ET (even if unused).
 - [ ] Every team member added (solo: just you).
 - [ ] Submit, then screenshot the confirmation.

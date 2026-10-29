@@ -39,7 +39,9 @@ phone loop works today.
 Suggested calendar: Oct 29 → 0, 1 · Oct 30 → 2, 3 · Oct 31 → 4, 5 · Nov 1 → 6 · Nov 2 → 8 · Nov 3 → 9.
 Phase 7 jumps the queue the moment the key works.
 
-**If the key hasn't arrived by Nov 1:** run Phase 7 against Llama 4 open weights (vision-capable) on a
+**Done Oct 29, no key ever coming:** Phase 7 runs on open weights (`MODEL_PROVIDER=open`: Muse Glimmer 30B on a
+ZeroGPU Space for photos, Llama 3.1 8B on the Mac mini for text). See README "Meta AI, and where it runs".
+**Original plan, if the key hadn't arrived by Nov 1:** run Phase 7 against Llama 4 open weights (vision-capable) on a
 partner host (Fireworks, Together, Groq or Baseten credits). It is still Meta tooling, and Phase 0 makes it an
 env change. Say so honestly in the write-up.
 
