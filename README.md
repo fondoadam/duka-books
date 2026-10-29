@@ -14,7 +14,7 @@ the owner can take to a SACCO or bank.
 
 | Send | What happens |
 | --- | --- |
-| A photo of the ledger page | Muse Spark reads every money line, then sends a proposal with **Sawa, andika** / **Si sahihi** buttons |
+| A photo of the ledger page | Muse Glimmer (Meta open weights) reads every money line, then sends a proposal with **Sawa, andika** / **Si sahihi** buttons |
 | A photo of several receipts, captioned *risiti* | SAM 3 finds each receipt and sends back the photo with numbered boxes. Each crop is read in parallel, and one proposal groups the lines as "Risiti 1 / 2 / 3" |
 | A forwarded M-Pesa or Fuliza SMS | An exact parser reads it, with no model involved: sales, Till and Paybill payments, transaction fees, Fuliza draws, fees and repayments. A transaction code is never booked twice |
 | A voice note | It is transcribed and echoed back as *"Nimesikia: …"* (here's what I heard), then handled like text |
@@ -32,8 +32,12 @@ eval.
 
 We didn't build these and use them as they are:
 
-- **Meta's models**: Muse Spark (Meta Model API), SAM 3 (`facebook/sam3`, under Meta's SAM licence), Llama 4 open
-  weights for the fallback.
+- **Meta's models**: Muse Glimmer 30B (`meta-models/Muse-Glimmer-30B`, Apache-2.0; run as Unsloth's 4-bit build),
+  Llama 3.2 Vision 11B (Llama 3.2 Community Licence), SAM 3 (`facebook/sam3`, under Meta's SAM licence), and Muse
+  Spark on the Meta Model API for when a key is available.
+- **Muse Glimmer hosting**: the public Hugging Face Space
+  [`Taf2023/Muse-Glimmer-30B-DFlash`](https://huggingface.co/spaces/Taf2023/Muse-Glimmer-30B-DFlash) (4-bit weights
+  with Meta's DFlash drafter), called through its Gradio API. Llama runs in Ollama on our own Mac.
 - **SAM 3 hosting**: the public Hugging Face Space
   [`prithivMLmods/SAM3-Demo`](https://huggingface.co/spaces/prithivMLmods/SAM3-Demo) (Apache-2.0), called through
   its Gradio API.
@@ -42,19 +46,32 @@ We didn't build these and use them as they are:
 
 ## Meta AI, and where it runs
 
+We never got Meta Model API credits (they need a card), so the bot runs on Meta's **open weights** on compute we
+provide ourselves. The rules count those as Meta models. `MODEL_PROVIDER=open` (`convex/lib/space.ts`) sends every
+model call through one adapter that speaks the OpenAI format to the app:
+
+1. **Muse Glimmer 30B** on a free Hugging Face ZeroGPU Space. Best quality, but the free GPU quota is a handful of
+   calls a day.
+2. **Llama 3.2 Vision 11B** in Ollama on our own Mac mini (M4, 16 GB), behind a token-checked proxy and a Cloudflare
+   tunnel (`pnpm llama:serve`). It takes over whenever the Space is out of quota or down.
+
+Neither host takes tool calls or a JSON schema, so the adapter adds both to the prompt and parses the reply back into
+an OpenAI tool call or JSON object. The ask agent, extraction and corrections code is the same code that would run on
+Muse Spark.
+
 | Model | Job | Code | Status (Oct 29) |
 | --- | --- | --- | --- |
-| **Muse Spark 1.3** (Meta Model API) | Vision extraction of handwritten Swahili/Sheng ledgers and receipts into a Zod schema | `convex/lib/extract.ts` | Built and wired. Waiting on the API key (card); a stub runs meanwhile |
-| **Muse Spark** agent with tools | Answers questions with `get_totals(period)`, `get_debtors()`, `get_fuliza_balance()`. A figure guard rejects any number the tools didn't return | `convex/lib/ask.ts` | Covered by mock-model tests. A keyword router gives the same answers until the key arrives |
-| **Muse Spark** | Maps free-form corrections ("sukari ilikuwa mia nne hamsini", the sugar was 450) onto a line fix | `convex/lib/corrections.ts` | Covered by mock-model tests. Exact rules handle `2 = 450` today |
-| **SAM 3 / 3.1** | Finds every receipt in one photo (text prompt "receipt"), then crops and annotates. `sam-3.1` on the Meta Model API once the key is set | `convex/lib/segment.ts`, `infra/modal_app.py` | **Live** on the dev deployment through a free Hugging Face ZeroGPU Space: 3 real receipts → 3 boxes in about 3 s. Self-host on Modal also written |
-| **Muse Spark** audio input | Swahili voice notes: WhatsApp's Opus is decoded to WAV in Convex, `muse-spark-1.2` transcribes (Muse Voice Transcribe has no Swahili) | `convex/lib/transcribe.ts`, `convex/lib/audio.ts` | Built and tested on the wire format; turns on with the key |
-| **Omnilingual ASR** (open weights), fallback | The same, self-hosted | `infra/modal_app.py` | Written, untested (needs credits) |
-| **Llama 4** (open weights), fallback | The same extraction and agent on an OpenAI-compatible partner host | `convex/lib/ai.ts` (`MODEL_PROVIDER=compat`) | One env change |
+| **Muse Glimmer 30B** (open weights) | Vision extraction of handwritten Swahili/Sheng ledgers and receipts into a Zod schema; free-text records; corrections; the ask agent | `convex/lib/extract.ts`, `convex/lib/space.ts` | **Live.** A handwritten-style ledger photo: 6 of 6 lines right, crossed-out line skipped, total matched, about 30 s |
+| **Llama 3.2 Vision 11B** (open weights, our Mac) | The same, when the Space quota runs out | `infra/local-llama.mjs`, `convex/lib/space.ts` | See the measurement below |
+| **Agent with tools** | Answers questions with `get_totals(period)`, `get_debtors()`, `get_fuliza_balance()`. A figure guard rejects any number the tools didn't return | `convex/lib/ask.ts` | Live through the adapter's prompt-based tool calls; keyword router as backstop |
+| **Free-text corrections** | Maps "sukari ilikuwa mia nne hamsini" (the sugar was 450) onto a line fix | `convex/lib/corrections.ts` | Live through the adapter. Exact rules handle `2 = 450` without a model |
+| **SAM 3** | Finds every receipt in one photo (text prompt "receipt"), then crops and annotates | `convex/lib/segment.ts`, `infra/modal_app.py` | **Live** through a free ZeroGPU Space: 3 real receipts → 3 boxes in about 3 s |
+| **Muse Spark 1.3** (Meta Model API) | Everything above plus Swahili voice notes (audio input) and `sam-3.1` | `convex/lib/ai.ts` (`MODEL_PROVIDER=meta`) | Built and wired; never had credits. Voice notes use a stub transcript without it |
 
-**One switch:** setting `MODEL_API_KEY` (Meta, or a compat host for Llama) turns every model path live at once
-(`modelsLive()` in `convex/lib/ai.ts`). Without it, the whole loop still runs on the exact parsers and stubs;
-stub replies are labelled *Majaribio* (test). `MODEL_STUB=1` forces the stubs during a demo.
+**One switch:** `MODEL_PROVIDER=open` with `HF_TOKEN` (or a fallback host) turns every model path live at once
+(`modelsLive()` in `convex/lib/ai.ts`), as does `MODEL_API_KEY` for Muse Spark. Without either, the whole loop still
+runs on the exact parsers and stubs; stub replies are labelled *Majaribio* (test). `MODEL_STUB=1` forces the stubs
+during a demo.
 
 ## How the ledger stays correct
 
@@ -88,7 +105,7 @@ flowchart LR
     mpesa["Exact parsers<br/>M-Pesa, Fuliza, spoken"]
     sam["SAM 3: split receipts"]
     asr["Omnilingual ASR: voice"]
-    spark["Muse Spark vision / text<br/>+ shop's past corrections"]
+    spark["Muse Glimmer 30B → Llama 3.2 Vision<br/>+ shop's past corrections"]
   end
   process --> mpesa
   process --> sam --> spark
@@ -168,11 +185,13 @@ convex/
   summaries.ts     evening summary (crons.ts, 19:00 Nairobi) and "ripoti"
   pnl.ts           monthly P&L PDF to storage, sent as a WhatsApp document
   lib/ai.ts        model provider + the one live switch
-  lib/extract.ts   Muse Spark extraction, few-shot from corrections, sum check
+  lib/space.ts     open-weights adapter: Muse Glimmer Space, then own-machine Llama; tools + JSON via the prompt
+  lib/extract.ts   extraction (Muse Glimmer / Llama / Muse Spark), few-shot from corrections, sum check
   lib/ask.ts       tool agent, figure guard, keyword router
   lib/segment.ts   SAM 3 receipt boxes, crops, annotated image
   lib/transcribe.ts  voice-note ASR seam
   lib/mpesa.ts, lib/spoken.ts, lib/corrections.ts   exact parsers
+infra/local-llama.mjs  Llama 3.2 Vision on our Mac: token proxy + Cloudflare tunnel, writes the URL to Convex
 infra/modal_app.py  self-hosted SAM 3.1 + Omnilingual ASR (untested; needs credits)
 scripts/            simulate, smoke-extract, eval
 docs/               plan, roadmap (phase status), WhatsApp setup, submission checklist

@@ -1,12 +1,27 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { openFetch } from "./space";
 
 type Env = Record<string, string | undefined>;
 
 // MODEL_PROVIDER=meta (default) uses the Meta Model API and Muse Spark for everything.
 // MODEL_PROVIDER=compat points at any OpenAI-compatible host (e.g. Llama open weights on a partner),
 // which must then name its base URL and models.
+// MODEL_PROVIDER=open runs Meta open weights with no Meta key and no card: Muse Glimmer 30B on a free Hugging Face
+// ZeroGPU Space (HF_TOKEN), then Llama on our own machine (MODEL_FALLBACK_URL) when the Space is out of quota.
+// See ./space.
 export function modelConfig(env: Env = process.env) {
   const provider = env.MODEL_PROVIDER ?? "meta";
+  if (provider === "open") {
+    return {
+      provider,
+      baseURL: "https://open.invalid/v1", // never fetched: openFetch picks the host
+      apiKey: undefined,
+      visionModel: "muse-glimmer-30b",
+      textModel: "muse-glimmer-30b",
+      audioModel: undefined,
+      structured: true, // the schema goes into the prompt (./space)
+    };
+  }
   if (provider !== "meta" && provider !== "compat") throw new Error(`Unknown MODEL_PROVIDER: ${provider}`);
   const fallback = provider === "meta";
   const pick = (name: string, metaDefault: string) => {
@@ -28,11 +43,13 @@ export function modelConfig(env: Env = process.env) {
   };
 }
 
-// The one switch. With a model key (Meta Model API, or MODEL_PROVIDER=compat for Llama on a partner host) every
+// The one switch. With a model key (Meta Model API, or MODEL_PROVIDER=compat for Llama on a partner host), or
+// MODEL_PROVIDER=open with an HF token or a fallback host (Meta open weights), every
 // model path is live: photo and text extraction, the ask agent, free-text corrections. Without one, stubs and the
 // exact parsers run the whole loop. MODEL_STUB=1 forces the stubs even with a key (a fallback during a live demo).
 export function modelsLive(env: Env = process.env) {
-  return !!env.MODEL_API_KEY && env.MODEL_STUB !== "1";
+  const keyed = env.MODEL_PROVIDER === "open" ? !!(env.HF_TOKEN || env.MODEL_FALLBACK_URL) : !!env.MODEL_API_KEY;
+  return keyed && env.MODEL_STUB !== "1";
 }
 
 // Live on the Meta Model API itself, so the Meta-only surfaces (SAM 3.1, audio input) are there too.
@@ -56,6 +73,7 @@ function provider() {
       baseURL: config.baseURL,
       apiKey: config.apiKey,
       supportsStructuredOutputs: config.structured,
+      ...(config.provider === "open" ? { fetch: openFetch() } : {}),
     }),
   };
 }
@@ -72,6 +90,6 @@ export function textModel() {
 
 export function audioModel() {
   const { config, models } = provider();
-  if (!config.audioModel) throw new Error("AUDIO_MODEL must be set when MODEL_PROVIDER=compat");
+  if (!config.audioModel) throw new Error(`AUDIO_MODEL must be set when MODEL_PROVIDER=${config.provider}`);
   return models(config.audioModel);
 }

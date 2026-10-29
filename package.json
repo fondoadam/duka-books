@@ -11,7 +11,8 @@
     "test": "vitest run",
     "smoke:extract": "tsx --env-file=.env.local scripts/smoke-extract.ts",
     "simulate": "tsx --env-file=.env.local scripts/simulate.ts",
-    "eval": "tsx --env-file=.env.local scripts/eval.ts"
+    "eval": "tsx --env-file=.env.local scripts/eval.ts",
+    "llama:serve": "node infra/local-llama.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^3.0.79",

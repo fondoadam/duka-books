@@ -45,5 +45,8 @@ describe("modelsLive", () => {
     expect(modelsLive({ MODEL_API_KEY: "k", EXTRACT_STUB: "1" })).toBe(true); // retired: ignored
     expect(modelsLive({ MODEL_API_KEY: "k", MODEL_STUB: "1" })).toBe(false);
     expect(modelsLive({ MODEL_PROVIDER: "compat", MODEL_API_KEY: "fw_k" })).toBe(true);
+    expect(modelsLive({ MODEL_PROVIDER: "open" })).toBe(false);
+    expect(modelsLive({ MODEL_PROVIDER: "open", HF_TOKEN: "hf_x" })).toBe(true);
+    expect(modelsLive({ MODEL_PROVIDER: "open", MODEL_FALLBACK_URL: "https://mac.example/v1" })).toBe(true);
   });
 });
