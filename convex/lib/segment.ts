@@ -1,11 +1,14 @@
 import jpeg from "jpeg-js";
 import { decode as decodePng } from "fast-png";
+import { metaLive, modelConfig } from "./ai";
 
 // SAM 3 receipt splitting: one photo of several receipts becomes one crop per receipt, plus an annotated copy
 // (numbered boxes) to send back so the owner sees what was found.
 //
 // SEGMENT_PROVIDER:
-//   unset or "stub"  no segmentation (also forced by SEGMENT_STUB=1): a real photo stays one receipt; the
+//   unset            "meta" once the Meta Model API is live (metaLive), otherwise "stub"
+//   "meta"           SAM 3.1 on the Meta Model API (/v1/responses, model sam-3.1), same key as Muse Spark
+//   "stub"           no segmentation (also forced by SEGMENT_STUB=1): a real photo stays one receipt; the
 //                    simulator's empty photo becomes a generated three-receipt fixture, so the grouped flow runs
 //   "hf-space"       SAM 3 on a Hugging Face ZeroGPU Space (Gradio API; SEGMENT_SPACE, default below). Free, no
 //                    card. HF_TOKEN (a free read token) lifts the anonymous quota of a few runs.
@@ -17,7 +20,9 @@ export type Image = { width: number; height: number; data: Uint8Array }; // RGBA
 export type Crop = { bytes: Uint8Array; box: Box };
 
 export const DEFAULT_SPACE = "https://prithivmlmods-sam3-demo.hf.space";
-export const segmentStubbed = () => process.env.SEGMENT_STUB === "1" || (process.env.SEGMENT_PROVIDER ?? "stub") === "stub";
+const segmentProvider = () =>
+  process.env.SEGMENT_STUB === "1" ? "stub" : (process.env.SEGMENT_PROVIDER ?? (metaLive() ? "meta" : "stub"));
+export const segmentStubbed = () => segmentProvider() === "stub";
 
 export function decodeJpeg(bytes: Uint8Array): Image {
   const img = jpeg.decode(bytes, { useTArray: true, formatAsRGBA: true, maxMemoryUsageInMB: 256 });
@@ -164,6 +169,45 @@ async function samSpace(bytes: Uint8Array, mimeType: string): Promise<Box[]> {
   return boxes.filter((b): b is Box => b !== null);
 }
 
+// SAM 3.1 on the Meta Model API: one non-streamed Responses call with a one-noun-phrase prompt. The answer is
+// special-token text, one <|box;x1=..;y1=..;x2=..;y2=..;w=..;h=..;c=..|> per match in source pixels (plus a mask
+// token we don't need). https://dev.meta.ai/docs/sam/reading-segmentation
+async function samMeta(bytes: Uint8Array, mimeType: string): Promise<Box[]> {
+  const { baseURL, apiKey } = modelConfig();
+  const res = await ok(
+    await fetch(`${baseURL}/responses`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: process.env.SEGMENT_MODEL ?? "sam-3.1",
+        input: [{ type: "message", role: "user", content: [
+          { type: "input_text", text: "receipt" },
+          { type: "input_image", image_url: `data:${mimeType};base64,${base64(bytes)}` },
+        ] }],
+        metadata: { include_confidence: "true" },
+      }),
+    }),
+    "SAM",
+  );
+  const json = (await res.json()) as { output_text?: string; output?: { content?: { text?: string }[] }[] };
+  const text = json.output_text ?? (json.output ?? []).flatMap((o) => o.content ?? []).map((c) => c.text ?? "").join("");
+  return samBoxes(text, Number(process.env.SEGMENT_THRESHOLD ?? 0.25));
+}
+
+export function samBoxes(text: string, minConfidence: number): Box[] {
+  return [...text.matchAll(/<\|box;([^|]*)\|>/g)].flatMap(([, fields]) => {
+    const f = Object.fromEntries(fields.split(";").map((kv) => kv.split("=")).map(([k, v]) => [k, Number(v)]));
+    if (f.c !== undefined && f.c < minConfidence) return [];
+    return [[Math.round(f.x1), Math.round(f.y1), Math.round(f.x2 - f.x1), Math.round(f.y2 - f.y1)] as Box];
+  });
+}
+
+function base64(bytes: Uint8Array) {
+  let s = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+
 async function samHttp(bytes: Uint8Array, mimeType: string): Promise<Box[]> {
   const url = process.env.SEGMENT_URL;
   if (!url) throw new Error("SEGMENT_URL must be set when SEGMENT_PROVIDER=http");
@@ -180,7 +224,8 @@ async function samHttp(bytes: Uint8Array, mimeType: string): Promise<Box[]> {
 }
 
 export async function findReceipts(bytes: Uint8Array, mimeType: string): Promise<Box[]> {
-  const provider = process.env.SEGMENT_PROVIDER;
+  const provider = segmentProvider();
+  if (provider === "meta") return samMeta(bytes, mimeType);
   if (provider === "hf-space") return samSpace(bytes, mimeType);
   if (provider === "http") return samHttp(bytes, mimeType);
   throw new Error(`Unknown SEGMENT_PROVIDER: ${provider}`);

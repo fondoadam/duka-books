@@ -7,8 +7,9 @@ describe("modelConfig", () => {
       provider: "meta",
       baseURL: "https://api.meta.ai/v1",
       apiKey: "k",
-      visionModel: "muse-spark-1.1",
-      textModel: "muse-spark-1.1",
+      visionModel: "muse-spark-1.3",
+      textModel: "muse-spark-1.3",
+      audioModel: "muse-spark-1.2",
       structured: true,
     });
   });

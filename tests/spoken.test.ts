@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { parseSpoken, swahiliNumber } from "../convex/lib/spoken";
 import { ASR_STUB_TEXT, transcribe } from "../convex/lib/transcribe";
@@ -70,5 +71,37 @@ describe("transcribe", () => {
     expect(form.get("language")).toBe("sw");
     expect((form.get("file") as File).name).toBe("voice.ogg");
     fetchSpy.mockRestore();
+  });
+});
+
+describe("transcribe with Muse Spark audio", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+
+  it("is the default once the Meta key is live: Opus is decoded to 16 kHz WAV and sent as input_audio", async () => {
+    vi.stubEnv("MODEL_API_KEY", "k");
+    const voice = new Uint8Array(readFileSync(new URL("./fixtures/voice.ogg", import.meta.url)));
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      Response.json({
+        id: "c1", object: "chat.completion", created: 0, model: "muse-spark-1.2",
+        choices: [{ index: 0, finish_reason: "stop", message: { role: "assistant", content: ' "Nimeuza sukari kilo mbili kwa mia mbili" ' } }],
+        usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+      }),
+    );
+    expect(await transcribe(voice, "audio/ogg; codecs=opus")).toBe("Nimeuza sukari kilo mbili kwa mia mbili");
+    const body = JSON.parse(String(fetchSpy.mock.calls[0][1]!.body));
+    expect(body).toMatchObject({ model: "muse-spark-1.2", reasoning_effort: "low" });
+    const part = body.messages[1].content[0];
+    expect(part.type).toBe("input_audio");
+    expect(part.input_audio.format).toBe("wav");
+    const wav = Uint8Array.from(atob(part.input_audio.data), (c) => c.charCodeAt(0));
+    const v = new DataView(wav.buffer);
+    expect(new TextDecoder().decode(wav.slice(0, 4))).toBe("RIFF");
+    expect(v.getUint32(24, true)).toBe(16000);
+    expect(v.getUint16(22, true)).toBe(1);
+    // 1.5 s of audio at 16 kHz, 16-bit
+    expect(Math.abs(v.getUint32(40, true) / 2 / 16000 - 1.5)).toBeLessThan(0.05);
   });
 });

@@ -1,7 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { MockLanguageModelV4 } from "ai/test";
 import { interpretCorrection } from "../convex/lib/corrections";
-import { finish, sumCheck } from "../convex/lib/extract";
+import { extractFromImage, finish, sumCheck } from "../convex/lib/extract";
 
 const usage = { inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 }, outputTokens: { total: 1, text: 1, reasoning: 0 } };
 const replying = (json: object) =>
@@ -53,5 +53,34 @@ describe("interpretCorrection (model fallback, live only)", () => {
   it("maps a delete", async () => {
     const model = replying({ line: 1, amountKes: null, method: null, kind: null, delete: true });
     expect(await interpretCorrection("ondoa unga", entries, model)).toEqual({ line: 1, delete: true });
+  });
+});
+
+describe("Meta Model API request", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+
+  it("sends Muse Spark 1.3, a strict json_schema, medium reasoning and a cache key, with the photo inline", async () => {
+    vi.stubEnv("MODEL_API_KEY", "k");
+    const output = { entries: [], confidence: 1, notes: null, writtenTotalKes: null };
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      Response.json({
+        id: "c1", object: "chat.completion", created: 0, model: "muse-spark-1.3",
+        choices: [{ index: 0, finish_reason: "stop", message: { role: "assistant", content: JSON.stringify(output) } }],
+        usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+      }),
+    );
+    await extractFromImage(new Uint8Array([0xff, 0xd8, 0xff]), "image/jpeg", "2026-10-29");
+    const [url, init] = fetchSpy.mock.calls[0];
+    expect(String(url)).toBe("https://api.meta.ai/v1/chat/completions");
+    const body = JSON.parse(String(init!.body));
+    expect(body).toMatchObject({ model: "muse-spark-1.3", reasoning_effort: "medium", prompt_cache_key: "duka-extract" });
+    expect(body.response_format.type).toBe("json_schema");
+    expect(body.response_format.json_schema.schema.additionalProperties).toBe(false);
+    // Params Meta rejects with HTTP 400 are never sent.
+    for (const k of ["stop", "seed", "n", "logprobs", "frequency_penalty", "presence_penalty", "temperature"]) expect(body[k]).toBeUndefined();
+    expect(body.messages[1].content[1]).toEqual({ type: "image_url", image_url: { url: "data:image/jpeg;base64,/9j/" } });
   });
 });

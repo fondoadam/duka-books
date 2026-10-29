@@ -211,9 +211,12 @@ Space `facebook/omniasr-transcriptions` is paused (needs an A100), the community
 Face inference provider serves `facebook/mms-1b-all` or `omniASR`. On the phone a real voice note gets the stub
 sentence, labelled "Majaribio".
 
+Oct 29, later: the Meta docs answer it. Muse Spark takes audio input (WAV/MP3), so `ASR_PROVIDER=meta` is built:
+the Opus note is decoded to 16 kHz WAV in Convex and `muse-spark-1.2` transcribes it. It is the default once
+`MODEL_API_KEY` is set. (`muse-voice-transcribe-1.0` lists no Swahili.) See `docs/meta-api-review.md`.
+
 **Your steps to make it real (any one):**
-1. Ask on the hackathon Discord whether the Meta Model API takes audio input for Muse Spark. If yes, tell me and I
-   add `ASR_PROVIDER=meta` (a small change in `lib/transcribe.ts`).
+1. ~~Ask on Discord whether Muse Spark takes audio.~~ It does. Set the key (Phase 7) and send a real voice note.
 2. With partner credits (Modal, Baseten): deploy `infra/modal_app.py` (`modal deploy infra/modal_app.py`, see the
    file's header). It serves Omnilingual ASR at `/v1/audio/transcriptions`. Then on the deployment:
    `npx convex env set ASR_PROVIDER compat`, `ASR_BASE_URL https://<app>.modal.run/v1`, `ASR_MODEL omniASR_LLM_7B`,
@@ -277,8 +280,8 @@ boxes around the paper, not the hand or table, in 3.3 s. A single-document photo
 
 **Files:** `convex/lib/ai.ts`, `convex/lib/extract.ts`, create `scripts/eval.ts`, `samples/expected/*.json`
 
-- [ ] Answer the open questions in `plan.md` first: does `response_format: json_schema` work? (`MODEL_STRUCTURED`)
-      Image size limits? Latency per photo?
+- [x] Answer the open questions in `plan.md` first: does `response_format: json_schema` work? (`MODEL_STRUCTURED`)
+      Image size limits? Answered from the docs in `docs/meta-api-review.md`. Latency per photo: measure on key day.
 - [x] `pnpm eval`: runs extraction over `samples/*` and compares to `samples/expected/*.json` (hand-written for
       5–10 real ledger photos and receipts). Prints per-file line recall and amount accuracy. Re-run after every prompt change.
 - [ ] Tune the prompt until amounts are right on the eval set. If a line can't be read, it must be left out and
@@ -303,6 +306,8 @@ the key): the questions in `plan.md`, real answer keys, prompt tuning.
    Llama). That single change makes photos, free text, "ask" and free-text corrections use the model. You can
    `npx convex env remove EXTRACT_STUB` to tidy up; it is already ignored. If the model misbehaves during a demo:
    `npx convex env set MODEL_STUB 1`.
+4. Also on key day: `npx convex env set SEGMENT_PROVIDER meta` (SAM 3.1 on the Meta API), then one real voice note
+   and one *risiti* photo from the phone. Details: `docs/meta-api-review.md`.
 
 **Done when:** `pnpm eval` reports every amount correct on at least 8 of 10 samples, and the phone loop works with no stubs.
 

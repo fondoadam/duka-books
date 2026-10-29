@@ -16,11 +16,13 @@ export function modelConfig(env: Env = process.env) {
   };
   return {
     provider,
-    // Meta Model API speaks the OpenAI Chat Completions format. https://ai.developer.meta.com/docs/
+    // Meta Model API speaks the OpenAI Chat Completions format. https://dev.meta.ai/docs/protocols/chat-completions
     baseURL: pick("MODEL_BASE_URL", "https://api.meta.ai/v1"),
     apiKey: env.MODEL_API_KEY,
-    visionModel: pick("VISION_MODEL", "muse-spark-1.1"),
-    textModel: pick("TEXT_MODEL", "muse-spark-1.1"),
+    // 1.3 is Meta's pick for new work. Its audio input is marked degraded, so voice notes go to 1.2.
+    visionModel: pick("VISION_MODEL", "muse-spark-1.3"),
+    textModel: pick("TEXT_MODEL", "muse-spark-1.3"),
+    audioModel: env.AUDIO_MODEL ?? (fallback ? "muse-spark-1.2" : undefined),
     // Set MODEL_STRUCTURED=0 if the host rejects response_format json_schema; the SDK then falls back to JSON mode.
     structured: env.MODEL_STRUCTURED !== "0",
   };
@@ -31,6 +33,18 @@ export function modelConfig(env: Env = process.env) {
 // exact parsers run the whole loop. MODEL_STUB=1 forces the stubs even with a key (a fallback during a live demo).
 export function modelsLive(env: Env = process.env) {
   return !!env.MODEL_API_KEY && env.MODEL_STUB !== "1";
+}
+
+// Live on the Meta Model API itself, so the Meta-only surfaces (SAM 3.1, audio input) are there too.
+export function metaLive(env: Env = process.env) {
+  return modelsLive(env) && modelConfig(env).provider === "meta";
+}
+
+// Meta-only request fields, under the provider's name so a compat host never sees them. Muse Spark always reasons:
+// "low" keeps WhatsApp replies quick, "medium" for reading handwriting. A stable prompt_cache_key per task routes
+// requests that share the system prompt together, so its prefix is billed at the cached rate.
+export function metaOptions(task: "extract" | "ask" | "correct" | "transcribe", reasoningEffort: "low" | "medium") {
+  return { meta: { reasoningEffort, prompt_cache_key: `duka-${task}` } };
 }
 
 function provider() {
@@ -54,4 +68,10 @@ export function visionModel() {
 export function textModel() {
   const { config, models } = provider();
   return models(config.textModel);
+}
+
+export function audioModel() {
+  const { config, models } = provider();
+  if (!config.audioModel) throw new Error("AUDIO_MODEL must be set when MODEL_PROVIDER=compat");
+  return models(config.audioModel);
 }

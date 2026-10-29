@@ -26,11 +26,12 @@ the owner can take to a SACCO or bank.
 
 | Model | Job | Code | Status (Oct 29) |
 | --- | --- | --- | --- |
-| **Muse Spark** (Meta Model API) | Vision extraction of handwritten Swahili/Sheng ledgers and receipts into a Zod schema | `convex/lib/extract.ts` | Built and wired. Waiting on the API key (card); a stub runs meanwhile |
+| **Muse Spark 1.3** (Meta Model API) | Vision extraction of handwritten Swahili/Sheng ledgers and receipts into a Zod schema | `convex/lib/extract.ts` | Built and wired. Waiting on the API key (card); a stub runs meanwhile |
 | **Muse Spark** agent with tools | Answers questions with `get_totals(period)`, `get_debtors()`, `get_fuliza_balance()`. A figure guard rejects any number the tools didn't return | `convex/lib/ask.ts` | Covered by mock-model tests. A keyword router gives the same answers until the key arrives |
 | **Muse Spark** | Maps free-form corrections ("sukari ilikuwa mia nne hamsini", the sugar was 450) onto a line fix | `convex/lib/corrections.ts` | Covered by mock-model tests. Exact rules handle `2 = 450` today |
-| **SAM 3 / 3.1** | Finds every receipt in one photo (text prompt "receipt"), then crops and annotates | `convex/lib/segment.ts`, `infra/modal_app.py` | **Live** on the dev deployment through a free Hugging Face ZeroGPU Space: 3 real receipts → 3 boxes in about 3 s. Self-host on Modal also written |
-| **Omnilingual ASR** (open weights) | Swahili voice notes | `convex/lib/transcribe.ts`, `infra/modal_app.py` | Seam and stub built. No card-free host exists yet (see roadmap Phase 5) |
+| **SAM 3 / 3.1** | Finds every receipt in one photo (text prompt "receipt"), then crops and annotates. `sam-3.1` on the Meta Model API once the key is set | `convex/lib/segment.ts`, `infra/modal_app.py` | **Live** on the dev deployment through a free Hugging Face ZeroGPU Space: 3 real receipts → 3 boxes in about 3 s. Self-host on Modal also written |
+| **Muse Spark** audio input | Swahili voice notes: WhatsApp's Opus is decoded to WAV in Convex, `muse-spark-1.2` transcribes (Muse Voice Transcribe has no Swahili) | `convex/lib/transcribe.ts`, `convex/lib/audio.ts` | Built and tested on the wire format; turns on with the key |
+| **Omnilingual ASR** (open weights), fallback | The same, self-hosted | `infra/modal_app.py` | Written, untested (needs credits) |
 | **Llama 4** (open weights), fallback | The same extraction and agent on an OpenAI-compatible partner host | `convex/lib/ai.ts` (`MODEL_PROVIDER=compat`) | One env change |
 
 **One switch:** setting `MODEL_API_KEY` (Meta, or a compat host for Llama) turns every model path live at once

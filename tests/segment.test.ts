@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { encode as encodePng } from "fast-png";
 import {
-  FIXTURE_BOXES, annotate, cleanBoxes, crop, decodeJpeg, encodeJpeg, maskBox, receiptsFixture, segmentReceipts, type Box,
+  FIXTURE_BOXES, annotate, cleanBoxes, crop, decodeJpeg, encodeJpeg, maskBox, receiptsFixture, samBoxes, segmentReceipts, segmentStubbed, type Box,
 } from "../convex/lib/segment";
 
 afterEach(() => {
@@ -99,6 +99,35 @@ describe("segmentReceipts", () => {
     expect(crops.map((c) => c.box)).toEqual([[42, 58, 256, 464], [612, 98, 246, 404]]);
     expect(decodeJpeg(crops[0].bytes).width).toBe(256);
     expect(annotated).not.toBeNull();
+  });
+
+  it("reads SAM 3.1 box tokens, with or without confidence, dropping weak matches", () => {
+    const text = "<0f>1<|box;x1=60;y1=70;x2=280;y2=510;w=900;h=600;c=0.91|><|mask;x=0;y=0;data=4,4,~abc|>," +
+      "7<|box;x1=630;y1=110;x2=840;y2=490;w=900;h=600|><|mask;x=0;y=0;data=4,4,~d|>,9<|box;x1=1;y1=1;x2=5;y2=5;w=900;h=600;c=0.1|><|mask;x=0;y=0;data=1,1,~e|>";
+    expect(samBoxes(text, 0.25)).toEqual([[60, 70, 220, 440], [630, 110, 210, 380]]);
+    expect(samBoxes("", 0.25)).toEqual([]);
+  });
+
+  it("with the Meta key live, SAM 3.1 on the Meta Model API is the default", async () => {
+    vi.stubEnv("MODEL_API_KEY", "k");
+    expect(segmentStubbed()).toBe(false);
+    const [a, , c] = FIXTURE_BOXES;
+    const tok = ([x, y, w, h]: Box) => `<|box;x1=${x};y1=${y};x2=${x + w};y2=${y + h};w=900;h=600;c=0.9|><|mask;x=0;y=0;data=2,2,~x|>`;
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      Response.json({ output: [{ type: "message", content: [{ type: "output_text", text: `<0f>0${tok(c)},1${tok(a)}` }] }] }),
+    );
+    const { crops } = await segmentReceipts(encodeJpeg(receiptsFixture()), "image/jpeg");
+    expect(crops).toHaveLength(2);
+    const [url, init] = fetchSpy.mock.calls[0];
+    expect(url).toBe("https://api.meta.ai/v1/responses");
+    expect((init!.headers as Record<string, string>).Authorization).toBe("Bearer k");
+    const body = JSON.parse(String(init!.body));
+    expect(body.model).toBe("sam-3.1");
+    expect(body.input[0].content[0]).toEqual({ type: "input_text", text: "receipt" });
+    expect(body.input[0].content[1].image_url).toMatch(/^data:image\/jpeg;base64,\/9j\//);
+    // An explicit provider still wins (the deployment's hf-space until the key day).
+    vi.stubEnv("SEGMENT_PROVIDER", "stub");
+    expect(segmentStubbed()).toBe(true);
   });
 
   it("reports a Space error such as a used-up quota", async () => {

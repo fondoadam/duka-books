@@ -1,4 +1,5 @@
 import { generateText, stepCountIs, tool, type LanguageModel } from "ai";
+import { metaOptions } from "./ai";
 import { z } from "zod";
 import { kes } from "./money";
 import { PERIODS, type Period } from "./periods";
@@ -118,6 +119,7 @@ export async function answer(question: string, tools: AskTools, model?: Language
       system: SYSTEM,
       prompt: `<swali>${question}</swali>`,
       stopWhen: stepCountIs(4),
+      providerOptions: metaOptions("ask", "low"),
       tools: {
         get_totals: tool({
           description: "Mauzo, manunuzi, matumizi na faida kwa kipindi kimoja",

@@ -2,7 +2,7 @@ import { generateText, Output } from "ai";
 import { z } from "zod";
 import type { Infer } from "convex/values";
 import type { proposedEntry } from "../schema";
-import { modelsLive, textModel, visionModel } from "./ai";
+import { metaOptions, modelsLive, textModel, visionModel } from "./ai";
 import { kes } from "./money";
 
 const extraction = z.object({
@@ -99,6 +99,7 @@ export async function extractFromImage(image: Uint8Array, mediaType: string, tod
       },
     ],
     output: Output.object({ schema: modelExtraction }),
+    providerOptions: metaOptions("extract", "medium"),
   });
   return finish(output);
 }
@@ -110,6 +111,7 @@ export async function extractFromText(text: string, today: string, examples: Exa
     system: SYSTEM + fewShot(examples),
     prompt: `Reference date: ${today}. Extract the entries from this message:\n<record>\n${text}\n</record>`,
     output: Output.object({ schema: modelExtraction }),
+    providerOptions: metaOptions("extract", "medium"),
   });
   return finish(output);
 }

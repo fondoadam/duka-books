@@ -14,6 +14,7 @@ import type * as inbound from "../inbound.js";
 import type * as ledger from "../ledger.js";
 import type * as lib_ai from "../lib/ai.js";
 import type * as lib_ask from "../lib/ask.js";
+import type * as lib_audio from "../lib/audio.js";
 import type * as lib_corrections from "../lib/corrections.js";
 import type * as lib_extract from "../lib/extract.js";
 import type * as lib_money from "../lib/money.js";
@@ -46,6 +47,7 @@ declare const fullApi: ApiFromModules<{
   ledger: typeof ledger;
   "lib/ai": typeof lib_ai;
   "lib/ask": typeof lib_ask;
+  "lib/audio": typeof lib_audio;
   "lib/corrections": typeof lib_corrections;
   "lib/extract": typeof lib_extract;
   "lib/money": typeof lib_money;

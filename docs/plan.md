@@ -62,9 +62,11 @@ Keep SAM 3.1: "Use of Meta AI tooling" is 25% of the score.
 
 - Submission form fields (video length, repo link, write-up): open the submit page while signed in.
 - What is Glimmer, and does it fit (Discord / workshops)?
-- Does the Meta Model API accept `response_format: json_schema`? If not, set `supportsStructuredOutputs: false`
-  in `convex/lib/ai.ts`.
-- Speech: does the Meta Model API offer transcription for Swahili, or should Omnilingual ASR (open weights) run on
+- ~~Does the Meta Model API accept `response_format: json_schema`?~~ Yes, strict subset; our schemas fit
+  (docs/meta-api-review.md).
+- Speech, **answered Oct 29 from the docs** (docs/meta-api-review.md): `muse-voice-transcribe-1.0` has no
+  Swahili, but Muse Spark takes audio input (WAV/MP3). `ASR_PROVIDER=meta` decodes the Opus note and asks
+  `muse-spark-1.2`; it turns on with the key. Original question: does the Meta Model API offer transcription for Swahili, or should Omnilingual ASR (open weights) run on
   Modal/Baseten? Ask on Discord. **Gap (Oct 29):** voice notes run on the ASR stub. No card-less host serves a
   Meta ASR model (the official `facebook/omniasr-transcriptions` Space is paused; no HF inference provider serves
   MMS or omniASR). The code takes any OpenAI-compatible `/audio/transcriptions` host by env; steps in roadmap Phase 5.
