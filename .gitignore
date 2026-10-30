@@ -12,3 +12,5 @@ samples/*
 # Answer keys hold a real shop's figures: commit only the format example.
 samples/expected/*
 !samples/expected/_example.json
+# Demo recording output (a real shop's photos and books)
+demo/out/

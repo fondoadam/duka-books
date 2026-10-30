@@ -1,0 +1,152 @@
+<!doctype html>
+<!-- Replays demo/out/run.js (scripts/demo-record.ts) as the 3-minute video; scripts/demo-video.ts films it.
+     Open it directly to preview: demo/player.html?speed=4 plays four times faster. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Duka Books demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #f4efe6; --muted: #a59d90; --bg: #14110e; --panel: #1d1915; --line: #2e2822;
+    --accent: #e8a33d; --owner: #2f5d46; --bot: #262019; --chat: #100e0c;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); color: var(--ink); font: 400 20px/1.45 Inter, system-ui, sans-serif; }
+  .stage { display: grid; grid-template-columns: 560px 1fr; gap: 120px; align-items: center; height: 100%; padding: 0 160px 0 200px; }
+
+  .phone { width: 520px; height: 960px; border-radius: 56px; background: #050404; padding: 14px; box-shadow: 0 40px 120px #0009, 0 0 0 2px #3a332b; }
+  .screen { height: 100%; border-radius: 44px; overflow: hidden; display: flex; flex-direction: column; background: var(--chat); }
+  .bar { display: flex; align-items: center; gap: 14px; padding: 48px 22px 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
+  .avatar { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #1a1208; font-weight: 700; font-size: 18px; }
+  .bar b { display: block; font-size: 18px; } .bar small { color: var(--muted); font-size: 14px; }
+  .chat { flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; gap: 10px; padding: 18px 16px; }
+  .msg { max-width: 82%; padding: 10px 14px; border-radius: 16px; font-size: 16px; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; animation: pop .28s ease-out both; }
+  .msg.owner { align-self: flex-end; background: var(--owner); border-bottom-right-radius: 4px; }
+  .msg.bot { align-self: flex-start; background: var(--bot); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
+  .msg img { display: block; width: 100%; max-height: 360px; object-fit: cover; border-radius: 10px; margin: -2px 0 6px; }
+  .msg.tap { background: transparent; border: 1.5px solid var(--accent); color: var(--accent); font-weight: 600; }
+  .buttons { display: flex; gap: 6px; margin-top: 10px; }
+  .buttons span { flex: 1; text-align: center; padding: 8px 6px; border-radius: 10px; background: #ffffff0d; color: var(--accent); font-weight: 600; font-size: 15px; }
+  .buttons span.pressed { background: var(--accent); color: #1a1208; }
+  .doc { display: flex; gap: 10px; align-items: center; padding: 10px; border-radius: 10px; background: #ffffff0d; margin-bottom: 6px; }
+  .doc i { font-style: normal; width: 36px; height: 44px; border-radius: 4px; background: #c4472f; display: grid; place-items: center; font-size: 11px; font-weight: 700; }
+  .typing { align-self: flex-start; padding: 14px 16px; }
+  .typing span { display: inline-block; width: 7px; height: 7px; margin: 0 2px; border-radius: 50%; background: var(--muted); animation: blink 1s infinite; }
+  .typing span:nth-child(2) { animation-delay: .15s } .typing span:nth-child(3) { animation-delay: .3s }
+
+  .side { display: flex; flex-direction: column; gap: 28px; }
+  .kicker { color: var(--accent); font-weight: 600; letter-spacing: .14em; text-transform: uppercase; font-size: 18px; }
+  .caption { font: 600 50px/1.18 Fraunces, Georgia, serif; min-height: 4.8em; transition: opacity .35s; }
+  .steps { display: flex; gap: 8px; } .steps i { height: 6px; flex: 1; border-radius: 3px; background: var(--line); transition: background .4s; } .steps i.on { background: var(--accent); }
+  .note { color: var(--muted); font-size: 18px; max-width: 34em; }
+
+  .card { position: fixed; inset: 0; display: grid; place-content: center; gap: 30px; padding: 0 280px; background: var(--bg); text-align: left; transition: opacity .7s; z-index: 5; }
+  .card h1 { font: 600 88px/1.05 Fraunces, Georgia, serif; } .card h1 em { color: var(--accent); font-style: normal; }
+  .card p { font-size: 30px; color: var(--muted); max-width: 30em; } .card p b { color: var(--ink); font-weight: 600; }
+  .card ul { list-style: none; padding: 0; display: grid; gap: 12px; font-size: 26px; } .card li::before { content: "— "; color: var(--accent); }
+  .pnl { position: fixed; inset: 0; display: grid; place-items: center; background: #000c; opacity: 0; transition: opacity .6s; z-index: 4; }
+  .pnl img { height: 960px; border-radius: 8px; box-shadow: 0 30px 100px #000; }
+  .hidden { opacity: 0; pointer-events: none; }
+  @keyframes pop { from { opacity: 0; transform: translateY(12px) scale(.98); } }
+  @keyframes blink { 50% { opacity: .25; } }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="phone"><div class="screen">
+    <div class="bar"><div class="avatar">DB</div><div><b>Duka Books</b><small>bookkeeper on WhatsApp</small></div></div>
+    <div class="chat" id="chat"></div>
+  </div></div>
+  <div class="side">
+    <div class="kicker" id="kicker">Duka Books</div>
+    <div class="caption" id="caption"></div>
+    <div class="steps" id="steps"></div>
+    <p class="note">Replay of one recorded run. Every reply shown came from the live bot (Convex backend, Meta open-weights models); the chat is drawn here instead of filmed on a phone.</p>
+  </div>
+</div>
+
+<div class="card" id="title">
+  <div class="kicker">Meta Global AI Developer Hackathon · indie track</div>
+  <h1>Duka Books: <em>the books</em> a corner shop never kept.</h1>
+  <p>Kenya's small shops run on an exercise book and M-Pesa SMS. With no records, the only credit is <b>Fuliza</b>, the overdraft. Duka Books keeps double-entry books from what the owner already sends on WhatsApp.</p>
+</div>
+<div class="pnl" id="pnl"><img id="pnlimg" alt="Monthly profit and loss report"></div>
+<div class="card hidden" id="end">
+  <div class="kicker">Built during the event · Oct 27 – Nov 4, 2026</div>
+  <h1>Confirmed books, <em>in Swahili,</em> in the chat they already use.</h1>
+  <ul>
+    <li>Muse Glimmer 30B (Meta open weights) reads ledger pages and receipts</li>
+    <li>SAM 3 splits a pile of receipts into one entry each</li>
+    <li>Llama 3.1 8B reads typed notes, fixes and answers questions</li>
+    <li>Every entry posts to a double-entry journal; P&amp;L built from it</li>
+  </ul>
+</div>
+
+<script src="out/run.js"></script>
+<script>
+const speed = Number(new URLSearchParams(location.search).get("speed") || 1);
+const wait = (ms) => new Promise((r) => setTimeout(r, ms / speed));
+const $ = (id) => document.getElementById(id);
+const chat = $("chat");
+const steps = RUN.steps;
+$("steps").innerHTML = steps.map(() => "<i></i>").join("");
+
+const el = (cls, html) => { const d = document.createElement("div"); d.className = "msg " + cls; d.innerHTML = html; chat.append(d); trim(); return d; };
+const esc = (s) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
+// Keep the chat to what fits; older bubbles scroll off the top like a real phone.
+const trim = () => { while (chat.scrollHeight > chat.clientHeight && chat.children.length > 1) chat.firstElementChild.remove(); };
+
+function owner(show) {
+  if (show.kind === "tap") {
+    const pressed = [...chat.querySelectorAll(".buttons span")].reverse().find((b) => b.textContent === show.text);
+    if (pressed) pressed.classList.add("pressed");
+    return el("owner tap", esc(show.text));
+  }
+  if (show.kind === "photo") return el("owner", `<img src="out/${show.image}">${show.text ? esc(show.text) : ""}`);
+  return el("owner", esc(show.text));
+}
+function bot(r) {
+  let html = "";
+  if (r.media?.type === "image") html += `<img src="${r.media.link}">`;
+  if (r.media?.type === "document") html += `<div class="doc"><i>PDF</i><span>${esc(r.media.filename || "ripoti.pdf")}</span></div>`;
+  html += esc(r.body);
+  if (r.buttons) html += `<div class="buttons">${r.buttons.map((b) => `<span>${esc(b.title)}</span>`).join("")}</div>`;
+  return el("bot", html);
+}
+async function typing(ms) {
+  const t = document.createElement("div"); t.className = "msg bot typing"; t.innerHTML = "<span></span><span></span><span></span>";
+  chat.append(t); trim(); await wait(ms); t.remove();
+}
+
+// Reading time per step, scaled so the replay lands near 2:20 between the cards (3:00 in all).
+const words = (s) => s.split(/\s+/).length;
+const weight = steps.map((s) => 2600 + 260 * words(s.caption) + s.replies.reduce((n, r) => n + 90 * words(r.body), 0));
+const scale = Math.min(1.25, 140000 / weight.reduce((a, b) => a + b, 0));
+
+(async () => {
+  await wait(11000);
+  $("title").classList.add("hidden");
+  await wait(800);
+  for (const [i, s] of steps.entries()) {
+    $("caption").style.opacity = 0; await wait(300);
+    $("caption").textContent = s.caption; $("caption").style.opacity = 1;
+    $("steps").children[i].classList.add("on");
+    const budget = weight[i] * scale;
+    await wait(900);
+    owner(s.show);
+    for (const r of s.replies) { await typing(1100); bot(r); }
+    await wait(Math.max(1500, budget - 900 - 1100 * s.replies.length));
+  }
+  if (RUN.pnlImage) {
+    $("pnlimg").src = "out/" + RUN.pnlImage; $("pnl").style.opacity = 1;
+    await wait(8000); $("pnl").style.opacity = 0; await wait(600);
+  }
+  $("end").classList.remove("hidden");
+  await wait(14000);
+  window.DEMO_DONE = true;
+})();
+</script>
+</body>
+</html>

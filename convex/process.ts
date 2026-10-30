@@ -15,6 +15,7 @@ import { parseSpoken } from "./lib/spoken";
 import { asrStubbed, transcribe } from "./lib/transcribe";
 import { downloadMedia, isDryRun, markRead } from "./lib/whatsapp";
 import { sendPnl } from "./pnl";
+import { SIM_STORAGE } from "./sim";
 import { buildSummary } from "./summaries";
 
 const HANDLED = "Hii tayari imeshughulikiwa.";
@@ -41,7 +42,7 @@ export const inbound = internalAction({
         await onText(ctx, shop, inboundId, reply, inbound.text, today);
       } else if (inbound.kind === "image" && inbound.mediaId) {
         const receipts = /risiti|receipt/i.test(inbound.text ?? "");
-        const media = await fetchMedia(shop, inbound.mediaId, "image/jpeg", modelsLive() || (receipts && !segmentStubbed()));
+        const media = await fetchMedia(ctx, shop, inbound.mediaId, "image/jpeg", modelsLive() || (receipts && !segmentStubbed()));
         if (receipts) await onReceipts(ctx, shop._id, inboundId, reply, media, today);
         else {
           const examples = await ctx.runQuery(internal.ledger.recentCorrections, { shopId: shop._id });
@@ -63,9 +64,14 @@ export const inbound = internalAction({
 });
 
 // Downloads a photo or voice note only when a live step will read it. Simulated shops send made-up media ids, so
-// they never download; the stubs (and the receipt fixture) take the empty bytes.
-async function fetchMedia(shop: Doc<"shops">, mediaId: string, mimeType: string, needed: boolean) {
-  if (!needed || shop.simulated) return { bytes: new Uint8Array(), mimeType };
+// they never download; the stubs (and the receipt fixture) take the empty bytes. A simulated "sim-storage:<id>"
+// is a real file the simulator uploaded to Convex storage (`pnpm simulate photo <file>`), read like a download.
+async function fetchMedia(ctx: ActionCtx, shop: Doc<"shops">, mediaId: string, mimeType: string, needed: boolean) {
+  if (!needed) return { bytes: new Uint8Array(), mimeType };
+  if (shop.simulated) {
+    const stored = mediaId.startsWith(SIM_STORAGE) ? await ctx.storage.get(mediaId.slice(SIM_STORAGE.length) as Id<"_storage">) : null;
+    return { bytes: stored ? new Uint8Array(await stored.arrayBuffer()) : new Uint8Array(), mimeType: stored?.type || mimeType };
+  }
   return downloadMedia(mediaId);
 }
 
@@ -123,7 +129,7 @@ async function onVoice(
   today: string,
 ) {
   const stub = asrStubbed();
-  const media = await fetchMedia(shop, mediaId, mimeType ?? "audio/ogg", !stub);
+  const media = await fetchMedia(ctx, shop, mediaId, mimeType ?? "audio/ogg", !stub);
   const transcript = await transcribe(media.bytes, media.mimeType);
   if (!transcript) return reply.text("Sikusikia maneno yoyote. Jaribu tena, au andika ujumbe.");
   await reply.text(`🎙️ Nimesikia: "${transcript}"${stub ? "\n(Majaribio: sauti yako haijasomwa bado.)" : ""}`);

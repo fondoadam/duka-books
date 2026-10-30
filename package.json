@@ -12,7 +12,9 @@
     "smoke:extract": "tsx --env-file=.env.local scripts/smoke-extract.ts",
     "simulate": "tsx --env-file=.env.local scripts/simulate.ts",
     "eval": "tsx --env-file=.env.local scripts/eval.ts",
-    "llama:serve": "node infra/local-llama.mjs"
+    "llama:serve": "node infra/local-llama.mjs",
+    "demo:run": "tsx --env-file=.env.local scripts/demo-record.ts",
+    "demo:video": "tsx scripts/demo-video.ts"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^3.0.79",
@@ -28,6 +30,7 @@
     "@edge-runtime/vm": "^5.0.0",
     "@types/node": "^26.6.5",
     "convex-test": "^0.0.65",
+    "playwright-core": "^1.64.1",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5"

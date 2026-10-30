@@ -33,6 +33,7 @@ import type * as outbox from "../outbox.js";
 import type * as pnl from "../pnl.js";
 import type * as process from "../process.js";
 import type * as reports from "../reports.js";
+import type * as sim from "../sim.js";
 import type * as summaries from "../summaries.js";
 
 import type {
@@ -67,6 +68,7 @@ declare const fullApi: ApiFromModules<{
   pnl: typeof pnl;
   process: typeof process;
   reports: typeof reports;
+  sim: typeof sim;
   summaries: typeof summaries;
 }>;
 
