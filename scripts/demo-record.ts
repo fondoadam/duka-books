@@ -79,6 +79,11 @@ for (const [i, beat] of beats.entries()) {
   });
   const replies: Out[] = JSON.parse(raw.trim().split("\n").at(-1)!);
   console.log(replies.map((r) => r.body.split("\n")[0]).join(" | "));
+  // A photo that wasn't read (usually the free Space quota) would ruin the take: stop before any other step runs.
+  if (/^(photo|risiti) /.test(beat.send) && !replies.some((r) => r.buttons)) {
+    console.error("\nThe photo wasn't read (check `npx convex data inbound` for the error; usually the Space quota). Nothing saved.");
+    process.exit(2);
+  }
   steps.push({ ...beat, replies: replies.map(({ body, buttons, media }) => ({ body, buttons, media })) });
   if (i === 0) {
     fix = fixFor(replies);
