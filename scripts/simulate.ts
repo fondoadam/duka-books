@@ -71,14 +71,17 @@ const res = await fetch(`${site}/whatsapp`, {
 if (!res.ok || process.env.SIM_JSON !== "1") console.error(`webhook -> ${res.status}`);
 
 const seen = new Set(before.map((m) => m._id));
-for (let i = 0; i < 30; i++) {
+// SIM_WAIT: seconds to wait for the first reply (a cold photo model on a free Space can take minutes).
+for (let i = 0; i < Number(process.env.SIM_WAIT ?? 30); i++) {
   await new Promise((r) => setTimeout(r, 1000));
   const fresh = outbox().filter((m) => !seen.has(m._id)).reverse();
   if (fresh.length === 0) continue;
   if (process.env.SIM_JSON === "1") {
-    // Some steps reply twice (a voice note's echo, then its proposal): wait until 5 s pass with nothing new.
+    // Some steps reply twice (a voice note's echo, then its proposal): wait until 5 s pass with nothing new, and
+    // longer while the last reply says more is coming ("Nazisoma moja moja…" before the receipts are read).
     let all = fresh;
-    for (let quiet = 0; quiet < 5; ) {
+    const busy = () => all.at(-1)!.body.includes("…") && !all.at(-1)!.buttons;
+    for (let quiet = 0, t = 0; (quiet < 5 || busy()) && t < Number(process.env.SIM_WAIT ?? 30); t++) {
       await new Promise((r) => setTimeout(r, 1000));
       const more = outbox().filter((m) => !seen.has(m._id)).reverse();
       quiet = more.length > all.length ? 0 : quiet + 1;
@@ -94,5 +97,5 @@ for (let i = 0; i < 30; i++) {
   }
   process.exit(0);
 }
-console.error("No reply after 30 s. Check `npx convex logs`.");
+console.error(`No reply after ${process.env.SIM_WAIT ?? 30} s. Check \`npx convex logs\`.`);
 process.exit(1);

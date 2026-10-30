@@ -73,9 +73,9 @@ for (const [i, beat] of beats.entries()) {
   process.stdout.write(`${i + 1}/${beats.length} ${beat.send.slice(0, 50)} … `);
   const raw = execFileSync("pnpm", ["-s", "simulate", beat.send], {
     encoding: "utf8",
-    env: { ...process.env, SIM_FROM: from, SIM_JSON: "1" },
+    env: { ...process.env, SIM_FROM: from, SIM_JSON: "1", SIM_WAIT: "300" },
     stdio: ["ignore", "pipe", "inherit"],
-    timeout: 240_000,
+    timeout: 420_000,
   });
   const replies: Out[] = JSON.parse(raw.trim().split("\n").at(-1)!);
   console.log(replies.map((r) => r.body.split("\n")[0]).join(" | "));
