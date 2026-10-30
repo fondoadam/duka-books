@@ -14,3 +14,4 @@ samples/expected/*
 !samples/expected/_example.json
 # Demo recording output (a real shop's photos and books)
 demo/out/
+demo/take1/
