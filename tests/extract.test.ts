@@ -32,6 +32,13 @@ describe("sumCheck", () => {
     expect(out).toEqual({ entries: [line(540)], confidence: 0.9, notes: expect.stringMatching(/^Mstari 3 hausomeki\. Jumla iliyoandikwa ni KES 900/) });
     expect("writtenTotalKes" in out).toBe(false);
   });
+
+  it("finish() keeps only the first sentence of a model's notes, capped", () => {
+    const chatty = "Date interpreted as 30/10 from the page. Method for items 1-5 is not written, set to unknown.";
+    expect(finish({ entries: [line(540)], confidence: 0.9, notes: chatty, writtenTotalKes: null }).notes).toBe("Date interpreted as 30/10 from the page.");
+    expect(finish({ entries: [line(540)], confidence: 0.9, notes: "x".repeat(400), writtenTotalKes: null }).notes).toHaveLength(160);
+    expect(finish({ entries: [line(540)], confidence: 0.9, notes: "  ", writtenTotalKes: null }).notes).toBeNull();
+  });
 });
 
 describe("interpretCorrection (model fallback, live only)", () => {
