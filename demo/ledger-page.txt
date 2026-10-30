@@ -1,0 +1,49 @@
+DUKA BOOKS DEMO: WHAT TO WRITE IN THE EXERCISE BOOK
+====================================================
+
+Write this by hand on one ruled page, in blue or black pen, the way a shop owner would.
+Keep it natural, but make every number readable, except line 2 (see the note below).
+
+
+THE PAGE (copy everything between the lines)
+--------------------------------------------
+
+                30/10
+
+1.  Unga 2kg  x3              540
+2.  Mchele 3kg                450      <- write the 4 a bit messy, so it could pass for a 9
+3.  Mkate  x2                 120
+4.  Maziwa  x3                180
+5.  Sabuni                     95
+6.  Mama Njeri (deni) mafuta  200
+
+                    Jumla   1,585
+
+--------------------------------------------
+
+Why it looks like this:
+- Line 2 is the one the video "fixes" by sending "2 = 450". Its true amount is 450.
+- Line 6 is a credit sale ("deni" = owed), so the bot books it as a debt, not cash.
+- "Jumla" is the total. The bot checks that the lines add up to it: 540 + 450 + 120 + 180 + 95 + 200 = 1,585.
+- No phone numbers or full customer names, because the page will be in a public video.
+
+
+TAKING THE PHOTO
+----------------
+- Daylight, straight down from above, no shadow from your phone.
+- The page fills the frame and is in focus.
+- Save it as  samples/ledger.jpg
+
+
+OPTIONAL: THE RECEIPTS PHOTO
+----------------------------
+Three small slips of paper (or real receipts), laid side by side on a table with gaps between them,
+not overlapping. Write one on each slip:
+
+  Slip 1:   MAFUTA YA KUPIKA 5L          Jumla  1,150
+  Slip 2:   SABUNI (dozen)               Jumla  1,080
+  Slip 3:   BODA BODA (usafiri)          Jumla    150
+
+Photograph all three in one shot from above, and save it as  samples/receipts.jpg
+
+Then tell Claude the photos are in.
