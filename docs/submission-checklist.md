@@ -24,10 +24,10 @@ https://cerebralvalley.ai/e/meta-ai-developer-hackathon/hackathon/submit
       Meta models ran live. Pitch it as a bookkeeper, never as "reads receipts" (simple image analyzers are banned).
       Check the length (≤ 3:00), then watch it once end to end.
       **Recorded without a phone (Oct 30):** put one exercise-book page (and optionally one receipts photo) in `samples/`, then
-      `pnpm demo:run --ledger samples/<page>.jpg --receipts samples/<pile>.jpg` plays the story against the live bot as a fresh
+      `pnpm demo:run --ledger samples/ledger.jpg --expect 540,450,120,180,95,200 --receipts samples/receipts.jpg` plays the story against the live bot as a fresh
       simulated shop (real models, no WhatsApp sends) and `pnpm demo:video` films the replay (`demo/player.html`) to
       `demo/out/duka-books-demo.mp4`. Run it right after the Space quota resets: the photos take about 5 calls. Preview with
-      `demo/player.html?speed=4`. If line 2 of the page isn't the one to fix, change the `2 = 450` beat in `scripts/demo-record.ts`.
+      `demo/player.html?speed=4`. The first misread line gets the "Si sahihi" fix on camera; none misread, no fix beat.
 - [ ] Upload (YouTube unlisted or as the form asks) and note the link here.
 
 ## Repo

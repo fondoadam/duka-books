@@ -1,13 +1,15 @@
 // Runs the demo story (docs/plan.md) against the live deployment as a fresh simulated shop and saves every
 // message and real reply to demo/out/run.js, which demo/player.html replays for the video (scripts/demo-video.ts).
-//   pnpm demo:run --ledger samples/ledger-1.jpg [--receipts samples/receipts-1.jpg]
+//   pnpm demo:run --ledger samples/ledger.jpg --expect 540,450,120,180,95,200 [--receipts samples/receipts.jpg]
+// --expect is the page's true amounts, line by line. The first line the model misread is fixed on camera with
+// "Si sahihi" + "<line> = <amount>"; if it read every line right (or there's no --expect), the fix beats are skipped.
 // Each photo spends free Space quota (ledger: 1 call; receipts: SAM + 1 per receipt), so run it once, after a reset.
 import { execFileSync } from "node:child_process";
 import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { basename } from "node:path";
 
 type Out = { body: string; buttons: { id: string; title: string }[] | null; media?: { type: string; link: string; filename: string | null } };
-type Beat = { caption: string; send: string; show: { kind: "text" | "photo" | "tap"; text?: string; image?: string } };
+type Beat = { caption: string; send: string; show: { kind: "text" | "photo" | "tap"; text?: string; image?: string }; fix?: boolean };
 
 const arg = (name: string) => {
   const i = process.argv.indexOf(`--${name}`);
@@ -15,6 +17,7 @@ const arg = (name: string) => {
 };
 const ledger = arg("ledger");
 const receipts = arg("receipts");
+const expect = arg("expect")?.split(",").map(Number);
 if (!ledger) {
   console.error("Usage: pnpm demo:run --ledger <photo> [--receipts <photo>]");
   process.exit(1);
@@ -32,9 +35,9 @@ const FULIZA = "UJT5R09EGR Confirmed. Fuliza M-PESA amount is Ksh 50.00. Access 
 const tap = (title: string) => ({ kind: "tap" as const, text: title });
 
 const beats: Beat[] = [
-  { caption: "A page from the shop's exercise book, sent as a photo. Muse Glimmer reads the handwriting.", send: `photo ${ledger}`, show: { kind: "photo", image: keep(ledger) } },
-  { caption: "One line is wrong. The owner taps \"Si sahihi\" (not right).", send: "reject", show: tap("Si sahihi") },
-  { caption: "\"2 = 450\": line 2 is KES 450. The fix is exact, no model guessing.", send: "2 = 450", show: { kind: "text", text: "2 = 450" } },
+  { caption: "A day's sales in an exercise book, sent as a photo. Muse Glimmer reads the handwriting.", send: `photo ${ledger}`, show: { kind: "photo", image: keep(ledger) } },
+  { caption: "One line was misread. The owner taps \"Si sahihi\" (not right).", send: "reject", show: tap("Si sahihi"), fix: true },
+  { caption: "", send: "", show: { kind: "text" }, fix: true },
   { caption: "\"Sawa, andika\" (OK, write it): posted to a double-entry journal.", send: "confirm", show: tap("Sawa, andika") },
   ...(receipts
     ? [
@@ -55,7 +58,18 @@ const beats: Beat[] = [
 
 const from = `2547009${String(Date.now()).slice(-5)}`;
 const steps: (Beat & { replies: Out[] })[] = [];
+// The fix for the first line the model misread, from the photo's proposal; null when there's nothing to fix.
+function fixFor(replies: Out[]) {
+  if (!expect) return null;
+  const read = [...replies.map((r) => r.body).join("\n").matchAll(/^(\d+)\..*KES ([\d,]+)/gm)].map((m) => [Number(m[1]), Number(m[2].replace(/,/g, ""))]);
+  const wrong = expect.findIndex((amount, i) => read.find(([n]) => n === i + 1)?.[1] !== amount);
+  return wrong < 0 ? null : `${wrong + 1} = ${expect[wrong]}`;
+}
+
+let fix: string | null = null;
 for (const [i, beat] of beats.entries()) {
+  if (beat.fix && !fix) continue;
+  if (beat.fix && !beat.send) Object.assign(beat, { send: fix, show: { kind: "text", text: fix }, caption: `"${fix}": line ${fix!.split(" ")[0]} is KES ${fix!.split("= ")[1]}. The fix is exact, no model guessing.` });
   process.stdout.write(`${i + 1}/${beats.length} ${beat.send.slice(0, 50)} … `);
   const raw = execFileSync("pnpm", ["-s", "simulate", beat.send], {
     encoding: "utf8",
@@ -66,6 +80,10 @@ for (const [i, beat] of beats.entries()) {
   const replies: Out[] = JSON.parse(raw.trim().split("\n").at(-1)!);
   console.log(replies.map((r) => r.body.split("\n")[0]).join(" | "));
   steps.push({ ...beat, replies: replies.map(({ body, buttons, media }) => ({ body, buttons, media })) });
+  if (i === 0) {
+    fix = fixFor(replies);
+    console.log(fix ? `  model misread a line: fixing with "${fix}"` : "  every line read right: skipping the fix beats");
+  }
 }
 
 // The P&L PDF's first page as an image, so the video shows the report itself (sips ships with macOS).
