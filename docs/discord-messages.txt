@@ -22,3 +22,9 @@ Good luck everyone, and happy building! 🇰🇪
 =====================================================================
 
 Hi! I've applied for the $150 Meta Model API credits, but I don't have a credit card (common in Kenya, where most payments go through M-Pesa). Can a prepaid or virtual Visa card such as M-Pesa GlobalPay be used to activate billing, or is there another option for participants without a card? Thanks!
+
+=====================================================================
+3. BILLING HELP  (post in the help or support channel)
+=====================================================================
+
+Hi, could an organiser help with a Model API billing block? My $150 hackathon credit is on the account ($149.96 showing), but it's restricted with "We weren't able to place a temporary hold on your payment method", so I can't use a key. I've tried several Kenyan cards. The same cards work in Meta Pay, so they're fine, but they all fail this hold. Could the hold be waived for the credit, or is there another route for builders outside the US? Thanks!
