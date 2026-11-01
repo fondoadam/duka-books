@@ -275,9 +275,13 @@ async function propose(
     return;
   }
 
+  // The owner confirms the date too, unless it's simply today.
+  const today = nairobiToday();
+  const dates = [...new Set(entries.map((e) => e.date))].filter((d) => d !== today);
   const body = [
     `Nimepata rekodi ${entries.length}:`,
     ...lines(entries),
+    dates.length > 0 ? `\n📅 Tarehe: ${dates.join(", ")}` : "",
     dupeNote && `\n${dupeNote}`,
     extraction.notes ? `\n⚠️ ${extraction.notes}` : "",
   ]

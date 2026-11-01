@@ -12,8 +12,9 @@ A 40 to 60 second screen recording of the real bot on your phone. It proves the 
 
 ## Write the page
 
-Use your real exercise book and pen. **Write the date you're recording**: the bot's week starts on Monday, so an old
-date can fall outside "wiki hii".
+Use your real exercise book and pen. **Write the date you're recording**, large and well inside the page: a small date
+at the very top edge can be misread. The bot's week starts on Monday, so an old date can fall outside "wiki hii". If
+the date isn't today, the bot shows it as 📅 Tarehe before you confirm.
 
 Keep to about 6 lines, with clear headings. Use made-up customer names only. Make sales bigger than stock, because stock
 you buy counts against profit straight away.

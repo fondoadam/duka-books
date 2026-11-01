@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MockLanguageModelV4 } from "ai/test";
 import { interpretCorrection } from "../convex/lib/corrections";
-import { extractFromImage, extractFromText, finish, sumCheck } from "../convex/lib/extract";
+import { extractFromImage, extractFromText, finish, pinDates, sumCheck } from "../convex/lib/extract";
 
 const usage = { inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 }, outputTokens: { total: 1, text: 1, reasoning: 0 } };
 const replying = (json: object) =>
@@ -118,3 +118,30 @@ describe("extractFromText on a small model", () => {
     expect((await extractFromText("unga mia tatu, sukari mia mbili", "2026-10-29")).entries.map((e) => e.amountKes)).toEqual([300, 200]);
   });
 });
+
+describe("pinDates", () => {
+  const TODAY = "2026-11-01";
+  const dated = (...dates: string[]) => ({ entries: dates.map((date) => ({ ...line(100), date })), confidence: 0.9, notes: null });
+
+  it("moves a misread year-old date to today and says so", () => {
+    const out = pinDates(dated("2026-01-01", "2026-01-01"), TODAY);
+    expect(out.entries.map((e) => e.date)).toEqual([TODAY, TODAY]);
+    expect(out.notes).toContain("leo");
+  });
+
+  it("moves a future date to today", () => {
+    expect(pinDates(dated("2026-11-02"), TODAY).entries[0].date).toBe(TODAY);
+  });
+
+  it("keeps a recent page's date and adds no note", () => {
+    const out = pinDates(dated("2026-10-30", TODAY, "2026-09-05"), TODAY);
+    expect(out.entries.map((e) => e.date)).toEqual(["2026-10-30", TODAY, "2026-09-05"]);
+    expect(out.notes).toBeNull();
+  });
+
+  it("keeps a note the model already wrote", () => {
+    const out = pinDates({ ...dated("2025-11-01"), notes: "Mstari mmoja haukusomeka." }, TODAY);
+    expect(out.notes).toMatch(/^Mstari mmoja haukusomeka\.\n/);
+  });
+});
+

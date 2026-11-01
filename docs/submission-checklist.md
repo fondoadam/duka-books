@@ -36,7 +36,7 @@ https://cerebralvalley.ai/e/meta-ai-developer-hackathon/hackathon/submit
 - [ ] README "What was built during the hackathon" section still true (rules: judges must tell what's new, or DQ).
 - [x] README status table updated to what is actually live (Nov 1; recheck on submit day).
 - [x] (Nov 1, full history scanned) No secrets in git: `git log -p | grep -iE "EAA|hf_|sk-|secret="` comes back empty. `.env.local` stays ignored.
-- [x] `pnpm typecheck && pnpm test` green on `main` (181 tests, Nov 1).
+- [x] `pnpm typecheck && pnpm test` green on `main` (185 tests, Nov 1).
 - [x] (done Nov 1) Make `fondoadam/duka-books` **public** (GitHub → Settings → Danger zone → Change visibility), or add the
       judges as collaborators if the form allows a private repo.
 - [ ] Remove or keep the stray screenshots in the repo root (they are untracked; don't commit them).

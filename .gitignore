@@ -15,3 +15,4 @@ samples/expected/*
 # Demo recording output (a real shop's photos and books)
 demo/out/
 demo/take1/
+*.mov

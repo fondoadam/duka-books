@@ -34,9 +34,12 @@ const LABEL: Record<Period, string> = {
 
 const QUESTION_WORDS = /^(je|nani|nini|lini|wapi|vipi|kiasi|mbona|kwa nini|how|what|who|when|which)\b/i;
 
+// "Faida wiki hii": owners ask about their books without a question mark. With a figure it's a record instead.
+const BOOK_WORDS = /^(faida|hasara|mauzo|matumizi|manunuzi|deni|madeni)\b/i;
+
 export function isQuestion(text: string) {
   const t = text.trim();
-  return t.endsWith("?") || QUESTION_WORDS.test(t) || /\bngapi\b/i.test(t);
+  return t.endsWith("?") || QUESTION_WORDS.test(t) || /\bngapi\b/i.test(t) || (BOOK_WORDS.test(t) && !/\d/.test(t));
 }
 
 // The no-key path, and the fallback when the model fails. Order matters: "deni la Fuliza" is about Fuliza.

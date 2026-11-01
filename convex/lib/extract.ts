@@ -58,6 +58,20 @@ export function finish({ writtenTotalKes, ...raw }: z.infer<typeof modelExtracti
   return warning ? { ...out, notes: [out.notes, warning].filter(Boolean).join(" ") } : out;
 }
 
+// How far back a page can plausibly be. Further than this, or in the future, the model has misread the date.
+const MAX_AGE_DAYS = 62;
+
+export function pinDates(out: Extraction, today: string): Extraction {
+  const oldest = new Date(Date.parse(`${today}T00:00:00Z`) - MAX_AGE_DAYS * 86_400_000).toISOString().slice(0, 10);
+  const bad = (date: string) => date > today || date < oldest;
+  if (!out.entries.some((e) => bad(e.date))) return out;
+  return {
+    ...out,
+    entries: out.entries.map((e) => (bad(e.date) ? { ...e, date: today } : e)),
+    notes: [out.notes, "Tarehe haikusomeka vizuri, nimetumia ya leo."].filter(Boolean).join("\n"),
+  };
+}
+
 const SYSTEM = `You read the records of a small Kenyan shop (duka): handwritten exercise-book ledgers,
 receipts, and M-Pesa SMS. Writing may mix Swahili, Sheng and English.
 Extract every money line. Never invent a line or an amount: if a number is unreadable, leave the line out
@@ -113,7 +127,7 @@ export async function extractFromImage(image: Uint8Array, mediaType: string, tod
     output: Output.object({ schema: modelExtraction }),
     providerOptions: metaOptions("extract", "medium"),
   });
-  return finish(output);
+  return pinDates(finish(output), today);
 }
 
 export async function extractFromText(text: string, today: string, examples: Example[] = []): Promise<Extraction> {
@@ -125,7 +139,7 @@ export async function extractFromText(text: string, today: string, examples: Exa
     output: Output.object({ schema: modelExtraction }),
     providerOptions: metaOptions("extract", "medium"),
   });
-  const out = finish(output);
+  const out = pinDates(finish(output), today);
   // One line, no digits and one amount in words: the exact reading of the words is the amount.
   const spoken = /\d/.test(text) ? null : spokenAmount(text);
   if (spoken !== null && out.entries.length === 1) out.entries[0].amountKes = spoken;

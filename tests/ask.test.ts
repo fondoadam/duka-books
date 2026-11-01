@@ -24,6 +24,13 @@ describe("isQuestion", () => {
     expect(isQuestion("Nani ananidai")).toBe(true);
     expect(isQuestion("faida ni ngapi leo")).toBe(true);
     expect(isQuestion("Nimeuza unga 3 kwa 540")).toBe(false);
+    // Owners ask without a question mark.
+    expect(isQuestion("Faida wiki hii")).toBe(true);
+    expect(isQuestion("mauzo ya leo")).toBe(true);
+    expect(isQuestion("deni la fuliza")).toBe(true);
+    // A book word with an amount is a record.
+    expect(isQuestion("Mauzo 3,060")).toBe(false);
+    expect(isQuestion("Deni Mama Njeri 200")).toBe(false);
   });
 });
 
