@@ -16,3 +16,4 @@ samples/expected/*
 demo/out/
 demo/take1/
 *.mov
+*.MP4

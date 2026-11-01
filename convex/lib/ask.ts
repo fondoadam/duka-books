@@ -35,7 +35,7 @@ const LABEL: Record<Period, string> = {
 const QUESTION_WORDS = /^(je|nani|nini|lini|wapi|vipi|kiasi|mbona|kwa nini|how|what|who|when|which)\b/i;
 
 // "Faida wiki hii": owners ask about their books without a question mark. With a figure it's a record instead.
-const BOOK_WORDS = /^(faida|hasara|mauzo|matumizi|manunuzi|deni|madeni)\b/i;
+const BOOK_WORDS = /^(ripoti|faida|hasara|mauzo|matumizi|manunuzi|deni|madeni)\b/i;
 
 export function isQuestion(text: string) {
   const t = text.trim();

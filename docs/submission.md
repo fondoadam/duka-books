@@ -57,9 +57,11 @@ to journal loop.
 ### What's live, and what isn't
 
 - **Live:** the WhatsApp bot on a Meta test number. A real phone sent an M-Pesa SMS and a ledger photo through to the
-  journal on Nov 1.
-- **Video:** a replay of one recorded run against the live bot. The replies are real; the chat is drawn on screen. The
-  ledger page and receipts are generated sample photos, not a real shop's records.
+  journal on Nov 1, then asked for its profit and P&L PDF.
+- **Video:** opens with a trimmed screen recording from a real phone (a handwritten test page, confirmed, questioned
+  and turned into a P&L PDF), with waits sped up. The rest is a replay of one recorded run against the live bot: the
+  replies are real, the chat is drawn on screen, and the ledger page and receipts are generated samples. All figures
+  are test data, not a real shop's records.
 - **Not live:** voice notes use a stub transcript, because no free host serves a Meta speech model with Swahili. Muse
   Spark is wired up but never ran, because Meta Model API access needs a card that passes a hold.
 - **Limits:** photos use a free GPU quota of a few calls a day. It has not yet been used by a real shop.
@@ -85,5 +87,6 @@ Spark 1.3 is wired up but never ran.
 
 **Description:** Duka Books turns exercise-book pages, receipts and M-Pesa SMS into confirmed double-entry books, in
 Swahili, inside WhatsApp. Built during the Meta Global AI Developer Hackathon with Muse Glimmer 30B, SAM 3 and
-Llama 3.1 8B. Replay of one recorded run against the live bot; the photos are generated samples.
+Llama 3.1 8B. Opens with a real phone recording, sped up in the waits, then a replay of one recorded run against the
+live bot. All figures are test data, and the replay's photos are generated samples.
 https://github.com/fondoadam/duka-books

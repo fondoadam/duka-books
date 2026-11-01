@@ -10,9 +10,9 @@ books them only after the owner taps **Sawa, andika** (OK, record it). It can th
 hii?"* (how much profit did I make this week?), send an evening summary, and produce a monthly profit-and-loss PDF
 the owner can take to a SACCO or bank.
 
-**Tested on a real phone (Nov 1, 2026):** a forwarded M-Pesa SMS and a ledger photo sent from WhatsApp were read,
-proposed, confirmed with the button and posted to the journal. The ledger photo was a generated sample: this has not
-yet been used by a real shop.
+**Tested on a real phone (Nov 1, 2026):** a forwarded M-Pesa SMS and a handwritten test page sent from WhatsApp were
+read, proposed, confirmed with the button and posted to the journal, and the bot then answered the week's profit and
+sent the P&L PDF. The figures were test data: this has not yet been used by a real shop.
 
 ## What the owner can send
 

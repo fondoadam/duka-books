@@ -28,6 +28,7 @@ describe("isQuestion", () => {
     expect(isQuestion("Faida wiki hii")).toBe(true);
     expect(isQuestion("mauzo ya leo")).toBe(true);
     expect(isQuestion("deni la fuliza")).toBe(true);
+    expect(isQuestion("Ripoti wiki hii")).toBe(true);
     // A book word with an amount is a record.
     expect(isQuestion("Mauzo 3,060")).toBe(false);
     expect(isQuestion("Deni Mama Njeri 200")).toBe(false);
