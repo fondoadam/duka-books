@@ -10,6 +10,10 @@ books them only after the owner taps **Sawa, andika** (OK, record it). It can th
 hii?"* (how much profit did I make this week?), send an evening summary, and produce a monthly profit-and-loss PDF
 the owner can take to a SACCO or bank.
 
+**Tested on a real phone (Nov 1, 2026):** a forwarded M-Pesa SMS and a ledger photo sent from WhatsApp were read,
+proposed, confirmed with the button and posted to the journal. The ledger photo was a generated sample: this has not
+yet been used by a real shop.
+
 ## What the owner can send
 
 | Send | What happens |
@@ -17,7 +21,7 @@ the owner can take to a SACCO or bank.
 | A photo of the ledger page | Muse Glimmer (Meta open weights) reads every money line, then sends a proposal with **Sawa, andika** / **Si sahihi** buttons |
 | A photo of several receipts, captioned *risiti* | SAM 3 finds each receipt and sends back the photo with numbered boxes. Each crop is read in parallel, and one proposal groups the lines as "Risiti 1 / 2 / 3" |
 | A forwarded M-Pesa or Fuliza SMS | An exact parser reads it, with no model involved: sales, Till and Paybill payments, transaction fees, Fuliza draws, fees and repayments. A transaction code is never booked twice |
-| A voice note | It is transcribed and echoed back as *"Nimesikia: …"* (here's what I heard), then handled like text |
+| A voice note | **Stub today:** the flow is built (decode, echo back *"Nimesikia: …"* (here's what I heard), then handle it like text), but the transcript is canned, because no free host serves a Meta speech model with Swahili |
 | **Si sahihi**, then `2 = 450`, `futa 2`, `2 deni`, `Ghairi` | Fixes one line (2 = 450 sets line 2 to KES 450; futa 2 deletes line 2; 2 deni marks line 2 as credit), deletes a line, or cancels, then re-sends the proposal. Each fix is remembered as an example for that shop |
 | *"faida wiki hii?"*, *"nani ananidai?"*, *"deni la Fuliza?"* | Profit this week, who owes me, what I owe on Fuliza. Answers come from tool calls over the ledger; the model never does the arithmetic |
 | *ripoti*, *ripoti ya mwezi* / *P&L*, *acha ripoti* | Today's summary now; the monthly P&L PDF as a WhatsApp document; turn off the 19:00 evening summary |
@@ -46,8 +50,8 @@ We didn't build these and use them as they are:
 
 ## Meta AI, and where it runs
 
-We never got Meta Model API credits (they need a card), so the bot runs on Meta's **open weights** on compute we
-provide ourselves. The rules count those as Meta models. `MODEL_PROVIDER=open` (`convex/lib/space.ts`) sends every
+We could never use the Meta Model API: the credit arrived, but the account stays restricted until a card passes a
+temporary hold, and ours didn't. So the bot runs on Meta's **open weights** on compute we provide ourselves. The rules count those as Meta models. `MODEL_PROVIDER=open` (`convex/lib/space.ts`) sends every
 model call through one adapter that speaks the OpenAI format to the app:
 
 1. **Muse Glimmer 30B** on a free Hugging Face ZeroGPU Space. Best quality, but the free GPU quota is a handful of
@@ -62,7 +66,7 @@ Neither host takes tool calls or a JSON schema, so the adapter adds both to the 
 an OpenAI tool call or JSON object. The ask agent, extraction and corrections code is the same code that would run on
 Muse Spark.
 
-| Model | Job | Code | Status (Oct 29) |
+| Model | Job | Code | Status (Nov 1) |
 | --- | --- | --- | --- |
 | **Muse Glimmer 30B** (open weights) | Vision extraction of handwritten Swahili/Sheng ledgers and receipts into a Zod schema; free-text records; corrections; the ask agent | `convex/lib/extract.ts`, `convex/lib/space.ts` | **Live.** A handwritten-style ledger photo: 6 of 6 lines right, crossed-out line skipped, total matched, about 30 s |
 | **Llama 3.1 8B** (open weights, our Mac) | Typed records, free-text corrections and the ask agent | `infra/local-llama.mjs`, `convex/lib/space.ts` | **Live** through the WhatsApp webhook: a 4-line Swahili record in about 20 s, questions in 2 to 4 s. Weaker than Glimmer on kinds and methods (the owner's confirm step catches it), and it misreads spelled-out amounts, so an exact Swahili number reader overrides it |
@@ -107,7 +111,7 @@ flowchart LR
   subgraph read [Read the record]
     mpesa["Exact parsers<br/>M-Pesa, Fuliza, spoken"]
     sam["SAM 3: split receipts"]
-    asr["Omnilingual ASR: voice"]
+    asr["Voice seam (stub transcript today)"]
     spark["Muse Glimmer 30B (photos) / Llama 3.1 8B (text)<br/>+ shop's past corrections"]
   end
   process --> mpesa

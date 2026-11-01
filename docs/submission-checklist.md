@@ -12,7 +12,7 @@ https://cerebralvalley.ai/e/meta-ai-developer-hackathon/hackathon/submit
 - [ ] Voice: a real ASR host, or say plainly in the write-up and video that voice runs on a stub (Phase 5).
 - [ ] Phone checks from roadmap Phase 1 pass on the real test number (SMS → confirm → duplicate refused → photo).
 - [ ] Clear test data from the real shop if needed, so the week's numbers are clean.
-- [ ] WhatsApp token is the permanent System User token (not the 24h one).
+- [x] WhatsApp token is the permanent System User token (confirmed with a real reply, Nov 1). The number changed to +1 555 162 9147 on Nov 1.
 
 ## Phase 8: real shop week and video
 
@@ -33,9 +33,9 @@ https://cerebralvalley.ai/e/meta-ai-developer-hackathon/hackathon/submit
 ## Repo
 
 - [ ] README "What was built during the hackathon" section still true (rules: judges must tell what's new, or DQ).
-- [ ] README status table updated to what is actually live on submit day (be honest about stubs).
-- [ ] No secrets in git: `git log -p | grep -iE "EAA|hf_|sk-|secret="` comes back empty. `.env.local` stays ignored.
-- [ ] `pnpm typecheck && pnpm test` green on `main`.
+- [x] README status table updated to what is actually live (Nov 1; recheck on submit day).
+- [x] (Nov 1, full history scanned) No secrets in git: `git log -p | grep -iE "EAA|hf_|sk-|secret="` comes back empty. `.env.local` stays ignored.
+- [x] `pnpm typecheck && pnpm test` green on `main` (178 tests, Nov 1).
 - [ ] Make `fondoadam/duka-books` **public** (GitHub → Settings → Danger zone → Change visibility), or add the
       judges as collaborators if the form allows a private repo.
 - [ ] Remove or keep the stray screenshots in the repo root (they are untracked; don't commit them).
@@ -43,9 +43,9 @@ https://cerebralvalley.ai/e/meta-ai-developer-hackathon/hackathon/submit
 ## Form
 
 - [ ] Project name, one-line pitch: "A WhatsApp bookkeeper for Kenya's dukas, on Meta's models."
-- [ ] Repo link, video link, write-up (the README's first sections work as the write-up).
+- [ ] Repo link, video link, write-up: all text is ready in [submission.md](submission.md).
 - [ ] Track: indie. Theme: Build for Your World.
-- [ ] Which Meta tools were used: Muse Glimmer 30B (photos, open weights), Llama 3.1 8B (text, agent, corrections, own Mac), SAM 3 (receipt splitting). Muse Spark is wired but never had credits; voice notes run on a stub transcript. Name exactly what was live.
+- [ ] Which Meta tools were used: Muse Glimmer 30B (photos, open weights), Llama 3.1 8B (text, agent, corrections, own Mac), SAM 3 (receipt splitting). Muse Spark is wired but never ran; voice notes run on a stub transcript. Name exactly what was live.
 - [ ] Claim the $150 Meta credit through the Oct 26 email form by Nov 4, 9 PM ET (even if unused).
 - [ ] Every team member added (solo: just you).
 - [ ] Submit, then screenshot the confirmation.
