@@ -1,5 +1,49 @@
 # Voiceover script
 
+## Freestyle guide
+
+### The problem
+
+Kenya has about 7.4 million small businesses, and the corner duka is the most common. A duka owner can be busy every
+day and still not know if they made a profit. Sales go in an exercise book, and money moves through M-Pesa.
+
+Both records are invisible to a bank. With no books, there's no proof the business works. So when the owner needs
+stock money, credit often means Fuliza or another costly short-term loan.
+
+Bookkeeping apps don't fix this. They ask a busy owner to learn something new, type everything in, and often work in
+a language that isn't theirs.
+
+### The idea
+
+Don't change what the owner does. They already write in the book, keep receipts and get M-Pesa messages, and they're
+already on WhatsApp. So they send those to a WhatsApp number, and it becomes their bookkeeper, in Swahili.
+
+### The one line to land
+
+The AI proposes, the owner confirms, and the books stay correct.
+
+### Say it your way, in this order
+
+| Video time | Talk about | Must mention |
+| --- | --- | --- |
+| 0:00 to 0:10 | The problem above, very short | The exercise book, and why a lender can't read it |
+| 0:10 to 0:40 | This is real, on your phone | Muse Glimmer reads your handwriting; nothing is saved until you tap; ask for profit in Swahili; you get a PDF |
+| 0:40 to 1:20 | The full run | **It's a replay with sample photos**; SAM 3 splits a pile of receipts |
+| 1:20 to 1:58 | Why the money stays right | M-Pesa uses exact rules, not AI; the same message can't count twice; Fuliza is a loan, not income |
+| 1:58 to 2:21 | Trust | Llama runs on your own Mac; every answer comes from the ledger |
+| 2:21 to 2:38 | Why it matters | A statement the owner can take to a SACCO or bank |
+| 2:38 to 2:53 | Close | Your name, Duka Books, built during this hackathon on Muse Glimmer, SAM 3 and Llama |
+
+### Keep it true
+
+- Call it a bookkeeper. Don't call it a receipt reader: simple image analyzers are banned.
+- Say the figures are test data. No real shop has used it yet.
+- Don't mention voice notes as working: they're still a stub.
+
+If you add a story of your own, keep it true. A shop you actually know will land better than any statistic.
+
+## Word-for-word version
+
 For `demo/out/duka-books-demo-final.mp4` (2:53). Each line starts at the time shown and fits before the next one, at a
 calm pace. A short gap at the end of a line is fine.
 
