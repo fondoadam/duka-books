@@ -28,6 +28,7 @@ https://cerebralvalley.ai/e/meta-ai-developer-hackathon/hackathon/submit
       simulated shop (real models, no WhatsApp sends) and `pnpm demo:video` films the replay (`demo/player.html`) to
       `demo/out/duka-books-demo.mp4`. Run it right after the Space quota resets: the photos take about 5 calls. Preview with
       `demo/player.html?speed=4`. The first misread line gets the "Si sahihi" fix on camera; none misread, no fix beat.
+- [ ] Record the real phone clip ([phone-demo-guide.md](phone-demo-guide.md)) and cut it into the video.
 - [ ] Upload (YouTube unlisted or as the form asks) and note the link here.
 
 ## Repo
@@ -35,8 +36,8 @@ https://cerebralvalley.ai/e/meta-ai-developer-hackathon/hackathon/submit
 - [ ] README "What was built during the hackathon" section still true (rules: judges must tell what's new, or DQ).
 - [x] README status table updated to what is actually live (Nov 1; recheck on submit day).
 - [x] (Nov 1, full history scanned) No secrets in git: `git log -p | grep -iE "EAA|hf_|sk-|secret="` comes back empty. `.env.local` stays ignored.
-- [x] `pnpm typecheck && pnpm test` green on `main` (178 tests, Nov 1).
-- [ ] Make `fondoadam/duka-books` **public** (GitHub → Settings → Danger zone → Change visibility), or add the
+- [x] `pnpm typecheck && pnpm test` green on `main` (181 tests, Nov 1).
+- [x] (done Nov 1) Make `fondoadam/duka-books` **public** (GitHub → Settings → Danger zone → Change visibility), or add the
       judges as collaborators if the form allows a private repo.
 - [ ] Remove or keep the stray screenshots in the repo root (they are untracked; don't commit them).
 

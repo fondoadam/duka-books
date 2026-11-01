@@ -57,6 +57,25 @@ export const setStatus = internalMutation({
     error: v.union(v.string(), v.null()),
   },
   handler: async (ctx, { inboundId, status, error }) => {
-    await ctx.db.patch(inboundId, { status, error });
+    // "Futa data yangu" deletes the message that asked for it.
+    if (await ctx.db.get(inboundId)) await ctx.db.patch(inboundId, { status, error });
+  },
+});
+
+// The privacy page's promise: a shop and every record tied to it, gone for good.
+export const eraseShop = internalMutation({
+  args: { shopId: v.id("shops") },
+  handler: async (ctx, { shopId }) => {
+    const shop = await ctx.db.get(shopId);
+    if (!shop) return;
+    const rows = [
+      ...(await ctx.db.query("journal").withIndex("by_shop_date", (q) => q.eq("shopId", shopId)).collect()),
+      ...(await ctx.db.query("proposals").withIndex("by_shop_status", (q) => q.eq("shopId", shopId)).collect()),
+      ...(await ctx.db.query("corrections").withIndex("by_shop", (q) => q.eq("shopId", shopId)).collect()),
+      ...(await ctx.db.query("inbound").withIndex("by_shop", (q) => q.eq("shopId", shopId)).collect()),
+      ...(await ctx.db.query("outbox").withIndex("by_to", (q) => q.eq("to", shop.waId)).collect()),
+    ];
+    for (const row of rows) await ctx.db.delete(row._id);
+    await ctx.db.delete(shopId);
   },
 });

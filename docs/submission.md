@@ -51,7 +51,7 @@ standard format. The agent and extraction code stays the same as it would be on 
 ### Technical depth
 
 Signed webhooks with constant-time comparison, deduplication by message ID, integer-cent double entry, rules before
-models, written-total checks, untrusted text treated as data, and 178 passing tests including the full signed webhook
+models, written-total checks, untrusted text treated as data, and 181 passing tests including the full signed webhook
 to journal loop.
 
 ### What's live, and what isn't

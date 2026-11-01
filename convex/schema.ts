@@ -86,7 +86,9 @@ export default defineSchema({
     mimeType: v.union(v.string(), v.null()),
     status: v.union(v.literal("received"), v.literal("processed"), v.literal("failed")),
     error: v.union(v.string(), v.null()),
-  }).index("by_wa_message_id", ["waMessageId"]),
+  })
+    .index("by_wa_message_id", ["waMessageId"])
+    .index("by_shop", ["shopId"]),
 
   // The model proposes; the owner confirms. Nothing reaches the ledger without a tap.
   proposals: defineTable({

@@ -366,3 +366,60 @@ describe("Receipt splitting", () => {
     fetchSpy.mockRestore();
   });
 });
+
+describe("Deleting a shop's data", () => {
+  const tap = (t: ReturnType<typeof convexTest>, reply: { id: string; title: string }) =>
+    deliver(t, webhook({ type: "interactive", interactive: { type: "button_reply", button_reply: reply } }));
+
+  async function shopWithBooks(t: ReturnType<typeof convexTest>) {
+    await deliver(t, webhook({ type: "text", text: { body: SMS } }));
+    const confirm = (await latest(t)).buttons!.find((b) => b.id.startsWith("confirm:"))!;
+    await tap(t, confirm);
+    return confirm;
+  }
+  const count = (t: ReturnType<typeof convexTest>) =>
+    t.run(async (ctx) => ({
+      shops: (await ctx.db.query("shops").collect()).length,
+      inbound: (await ctx.db.query("inbound").collect()).length,
+      proposals: (await ctx.db.query("proposals").collect()).length,
+      journal: (await ctx.db.query("journal").collect()).length,
+    }));
+
+  it("asks first, and keeps everything until the owner confirms", async () => {
+    const t = convexTest(schema, modules);
+    await shopWithBooks(t);
+    await deliver(t, webhook({ type: "text", text: { body: "Futa data yangu" } }));
+    const ask = await latest(t);
+    expect(ask.body).toContain("haiwezi kurudishwa");
+    expect((await count(t)).journal).toBe(1);
+
+    await tap(t, ask.buttons!.find((b) => b.id === "erase:cancel")!);
+    expect((await latest(t)).body).toContain("sijafuta");
+    expect((await count(t)).journal).toBe(1);
+  });
+
+  it("deletes the shop and its records on confirm, and a stale button does nothing", async () => {
+    const t = convexTest(schema, modules);
+    const oldConfirm = await shopWithBooks(t);
+    await deliver(t, webhook({ type: "text", text: { body: "delete my data" } }));
+    await tap(t, (await latest(t)).buttons!.find((b) => b.id === "erase:confirm")!);
+
+    expect((await latest(t)).body).toContain("Nimefuta");
+    expect(await count(t)).toEqual({ shops: 0, inbound: 0, proposals: 0, journal: 0 });
+
+    await tap(t, oldConfirm);
+    expect((await count(t)).journal).toBe(0);
+  });
+
+  it("leaves other shops alone", async () => {
+    const t = convexTest(schema, modules);
+    const other = JSON.stringify({
+      entry: [{ changes: [{ value: { messages: [{ id: "wamid.other", from: "254799999999", type: "text", text: { body: SMS } }] } }] }],
+    });
+    await deliver(t, other);
+    await shopWithBooks(t);
+    await deliver(t, webhook({ type: "text", text: { body: "futa data yangu" } }));
+    await tap(t, (await latest(t)).buttons!.find((b) => b.id === "erase:confirm")!);
+    expect(await count(t)).toMatchObject({ shops: 1, inbound: 1, proposals: 1 });
+  });
+});

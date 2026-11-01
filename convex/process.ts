@@ -79,6 +79,11 @@ async function fetchMedia(ctx: ActionCtx, shop: Doc<"shops">, mediaId: string, m
 async function onButton(ctx: ActionCtx, shop: Doc<"shops">, reply: Reply, payload: string) {
   const [action, proposalId] = payload.split(":");
   const shopId = shop._id;
+  if (action === "erase") {
+    if (proposalId !== "confirm") return reply.text("Sawa, sijafuta chochote.");
+    await ctx.runMutation(internal.inbound.eraseShop, { shopId });
+    return reply.text("Nimefuta data yako yote. Ukituma ujumbe tena, tutaanza vitabu vipya.");
+  }
   if (action === "reject") {
     const id = await ctx.runMutation(internal.ledger.startCorrection, { proposalId, shopId });
     if (!id) return reply.text(HANDLED);
@@ -177,7 +182,12 @@ const PNL = /^(p\s*&\s*l|pnl|ripoti ya mwezi|taarifa ya (mkopo|mwezi)|faida na h
 // Fixed phrases the owner can type: the P&L PDF, today's summary, and turning the evening summary off or on.
 async function onCommand(ctx: ActionCtx, shop: Doc<"shops">, reply: Reply, text: string, today: string) {
   const t = text.trim().toLowerCase().replace(/[.!?]+$/, "");
-  if (PNL.test(t)) {
+  if (/^(futa data( yangu)?|delete my data)$/.test(t)) {
+    await reply.buttons("⚠️ Hii itafuta vitabu vyako vyote na rekodi zako zote, na haiwezi kurudishwa. Una uhakika?", [
+      { id: "erase:confirm", title: "Ndiyo, futa" },
+      { id: "erase:cancel", title: "Hapana" },
+    ]);
+  } else if (PNL.test(t)) {
     await sendPnl(ctx, shop, reply, /uliopita|iliyopita|last/.test(t) ? "last_month" : "this_month", today);
   } else if (/^ripoti( ya leo)?$/.test(t)) {
     await reply.text(await buildSummary(ctx, shop._id, today));

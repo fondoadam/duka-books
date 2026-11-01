@@ -25,6 +25,7 @@ yet been used by a real shop.
 | **Si sahihi**, then `2 = 450`, `futa 2`, `2 deni`, `Ghairi` | Fixes one line (2 = 450 sets line 2 to KES 450; futa 2 deletes line 2; 2 deni marks line 2 as credit), deletes a line, or cancels, then re-sends the proposal. Each fix is remembered as an example for that shop |
 | *"faida wiki hii?"*, *"nani ananidai?"*, *"deni la Fuliza?"* | Profit this week, who owes me, what I owe on Fuliza. Answers come from tool calls over the ledger; the model never does the arithmetic |
 | *ripoti*, *ripoti ya mwezi* / *P&L*, *acha ripoti* | Today's summary now; the monthly P&L PDF as a WhatsApp document; turn off the 19:00 evening summary |
+| *futa data yangu* / *delete my data* | After a confirm button, deletes the shop, its books and its message history |
 
 ## What was built during the hackathon
 
