@@ -150,8 +150,11 @@ The temporary token dies after 24 hours, probably in the middle of something. A 
 2. **Users > System users > Add**: name it `duka-books-bot`, role **Admin**. Click **Create system user**.
 3. With the system user selected, click **Assign assets**:
    - **Apps > Duka Books**: turn on **Full control** (Manage app).
-   - **WhatsApp accounts > your test WhatsApp Business Account**: turn on **Full control**.
-   Save.
+   - **WhatsApp accounts > your test WhatsApp account**: turn on **Full control**.
+   - **Messaging accounts > Test Messaging Account**: turn on **Full control**. Meta lists this as a separate
+     asset. Without it, sends fail with "Viewer cannot access the provided Paid Message Account" and registering
+     the number fails with error 10.
+   Save. Check the bot shows both accounts: if it only has the app, nothing can send or receive.
 4. Click **Generate new token**: app **Duka Books**, expiry **Never**, permissions
    `whatsapp_business_messaging` and `whatsapp_business_management`. Generate, then copy the token. It's only
    shown once.
@@ -159,7 +162,15 @@ The temporary token dies after 24 hours, probably in the middle of something. A 
    ```bash
    npx convex env set WHATSAPP_TOKEN "<system user token>"
    ```
-6. Send the bot a message to check it still replies.
+6. Connect the number and the app, using the **Messaging account ID** from Step 1 of the app dashboard (the
+   WhatsApp account ID fails with error 2388339):
+   ```bash
+   curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+     -d '{"messaging_product":"whatsapp","pin":"<WHATSAPP_PIN>"}' https://graph.facebook.com/v21.0/<PHONE_NUMBER_ID>/register
+   curl -X POST -H "Authorization: Bearer $TOKEN" https://graph.facebook.com/v21.0/<MESSAGING_ACCOUNT_ID>/subscribed_apps
+   ```
+7. Send the bot a message from your real phone to check it still replies. `pnpm simulate` skips Meta, so it can
+   pass while the real number is broken.
 
 ## Troubleshooting
 
