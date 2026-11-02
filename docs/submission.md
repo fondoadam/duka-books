@@ -10,7 +10,7 @@ https://cerebralvalley.ai/e/meta-ai-developer-hackathon/hackathon/submit. Field 
 - **Track:** Indie
 - **Theme:** Build for Your World
 - **Repo:** https://github.com/fondoadam/duka-books
-- **Demo video:** (add the link after uploading)
+- **Demo video:** https://youtu.be/oRIlghZCtjc
 
 ## Short description
 

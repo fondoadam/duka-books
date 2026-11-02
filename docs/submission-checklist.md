@@ -29,7 +29,7 @@ https://cerebralvalley.ai/e/meta-ai-developer-hackathon/hackathon/submit
       `demo/out/duka-books-demo.mp4`. Run it right after the Space quota resets: the photos take about 5 calls. Preview with
       `demo/player.html?speed=4`. The first misread line gets the "Si sahihi" fix on camera; none misread, no fix beat.
 - [x] Real phone clip recorded and cut in (Nov 1): upload `demo/out/duka-books-demo-final.mp4`, 2:53, git-ignored.
-- [ ] Upload (YouTube unlisted or as the form asks) and note the link here.
+- [x] Uploaded to YouTube (Nov 3): https://youtu.be/oRIlghZCtjc
 
 ## Repo
 
