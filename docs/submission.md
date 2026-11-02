@@ -81,6 +81,14 @@ support a loan.
 Muse Glimmer 30B (live, photos), Llama 3.1 8B (live, text, corrections, agent), SAM 3 (live, receipt splitting). Muse
 Spark 1.3 is wired up but never ran.
 
+## Why are Meta's models important to your solution?
+
+The owner's records are handwritten Swahili and Sheng in an exercise book, and a pile of paper receipts. Muse Glimmer reads that handwriting well enough to get 6 of 6 lines right on a test page, skip a crossed-out line and match the written total. SAM 3 is what makes a pile of receipts usable: it separates them so each is read alone instead of blurring together.
+
+Open weights matter as much as quality. A shop's books are private, and a corner shop can't pay per call. Because Meta's models are open, Llama 3.1 8B runs on our own Mac mini for typed records and questions, and the whole bot runs without a paid key. That is the path to something a duka can afford.
+
+Finally, it all lives in WhatsApp, which Kenyan shop owners already use every day, so there is nothing new to install or learn.
+
 ## Video title and description
 
 **Title:** Duka Books: a WhatsApp bookkeeper for Kenya's corner shops
