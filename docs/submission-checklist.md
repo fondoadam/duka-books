@@ -44,9 +44,9 @@ https://cerebralvalley.ai/e/meta-ai-developer-hackathon/hackathon/submit
 ## Form
 
 - [ ] Project name, one-line pitch: "A WhatsApp bookkeeper for Kenya's dukas, on Meta's models."
-- [ ] Repo link, video link, write-up: all text is ready in [submission.md](submission.md).
-- [ ] Track: indie. Theme: Build for Your World.
+- [x] Repo link, video link, write-up: all text is ready in [submission.md](submission.md).
+- [x] Track: indie. Theme: Build for Your World.
 - [ ] Which Meta tools were used: Muse Glimmer 30B (photos, open weights), Llama 3.1 8B (text, agent, corrections, own Mac), SAM 3 (receipt splitting). Muse Spark is wired but never ran; voice notes run on a stub transcript. Name exactly what was live.
 - [ ] Claim the $150 Meta credit through the Oct 26 email form by Nov 4, 9 PM ET (even if unused).
 - [ ] Every team member added (solo: just you).
-- [ ] Submit, then screenshot the confirmation.
+- [x] Submitted (Nov 3). The event page now shows "View Submission"; screenshot in `demo/out/submission-confirmation.png` (git-ignored).
